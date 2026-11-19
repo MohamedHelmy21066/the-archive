@@ -4547,7 +4547,18 @@ const itemsDocRef = doc(db, "tracker", "items");
 </script>
 <script>
 if('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
-  window.addEventListener('load', function(){ navigator.serviceWorker.register('./sw.js').catch(function(){}); });
+  var hadController = !!navigator.serviceWorker.controller, reloaded = false;
+  // When a newer service worker takes over, reload once so the new index.html is the one on screen
+  navigator.serviceWorker.addEventListener('controllerchange', function(){
+    if(!hadController || reloaded) return;
+    reloaded = true; location.reload();
+  });
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js', {updateViaCache: 'none'}).then(function(reg){
+      reg.update().catch(function(){});
+      document.addEventListener('visibilitychange', function(){ if(!document.hidden) reg.update().catch(function(){}); });
+    }).catch(function(){});
+  });
 }
 </script>
 </body>
