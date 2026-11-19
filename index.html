@@ -5,16 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Archive</title>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#12141c">
+<meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="The Archive">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500;600&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -967,10 +968,239 @@
   .cat-manager-hint{
     font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); margin-top:16px; line-height:1.5;
   }
+
+  /* =====================================================================
+     TV TIME–STYLE SHELL: light theme, yellow accent, bottom tabs
+     ===================================================================== */
+  :root{
+    --bg:#f4f4f4; --bg-raise:#ffffff; --card:#ffffff; --card-hover:#f1f1f1;
+    --gold:#ffd500; --gold-dim:#b89600; --brick:#e60012;
+    --ink:#0b0b0b; --ink-dim:#555; --ink-faint:#8c8c8c; --line:#e1e1e1;
+    --radius:8px; --shadow:0 6px 16px -10px rgba(0,0,0,.4);
+    --font-display:'Outfit',sans-serif; --font-body:'Outfit',sans-serif; --font-mono:'Outfit',sans-serif;
+    --nav-h:74px;
+  }
+  html{ background:var(--bg); }
+  body{ font-family:var(--font-body); padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom)); }
+  .sprockets, footer, .controls .type-tabs{ display:none !important; }
+
+  /* --- screens: only one is visible at a time --- */
+  .view{ display:none; }
+  body[data-screen="explore"] #viewExplore, body[data-screen="upcoming"] #viewUpcoming, body[data-screen="profile"] #viewProfile{ display:block; }
+  body[data-screen="explore"] .controls, body[data-screen="upcoming"] .controls, body[data-screen="profile"] .controls,
+  body[data-screen="explore"] main, body[data-screen="upcoming"] main, body[data-screen="profile"] main{ display:none; }
+
+  /* --- top switch (WATCH LIST | UPCOMING) --- */
+  .app-top{ display:none; position:sticky; top:0; z-index:40; background:#fff; border-bottom:1px solid #d9d9d9; padding-top:env(safe-area-inset-top); }
+  body[data-screen="watch"] .app-top, body[data-screen="upcoming"] .app-top{ display:flex; }
+  .top-tab{ flex:1; background:none; border:0; border-bottom:4px solid transparent; margin-bottom:-1px; padding:18px 8px 14px; font:700 19px var(--font-display); letter-spacing:.03em; text-transform:uppercase; color:#8a8a8a; cursor:pointer; transition:color .2s, border-color .2s; }
+  .top-tab.active{ color:#000; border-bottom-color:#000; }
+  body[data-view="movies"] .top-tab[data-sub="upcoming"]{ display:none; }
+
+  /* --- bottom navigation --- */
+  .bottom-nav{ position:fixed; left:0; right:0; bottom:0; z-index:60; display:flex; background:#fff; border-top:1px solid #ddd; padding-bottom:env(safe-area-inset-bottom); }
+  .nav-btn{ flex:1; background:none; border:0; padding:10px 0 8px; display:flex; flex-direction:column; align-items:center; gap:4px; color:#8a8a8a; font:500 13px var(--font-body); cursor:pointer; transition:color .15s; }
+  .nav-btn svg{ width:28px; height:28px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .nav-btn.active{ color:#000; } .nav-btn.active svg{ stroke-width:2.3; }
+  .nav-btn:active svg{ transform:scale(.92); }
+
+  /* --- shared layout --- */
+  .controls{ margin:10px auto 0; padding:0 12px; max-width:1200px; }
+  main{ max-width:1200px; margin:0 auto; padding:4px 12px 24px; }
+  .view{ max-width:1200px; margin:0 auto; }
+  .filter-row{ gap:8px; margin:6px 0 10px; }
+  .filter-pill{ border:0; background:#ececec; color:#000; border-radius:999px; padding:11px 16px; font:700 14px var(--font-display); letter-spacing:.03em; text-transform:uppercase; }
+  .filter-pill:hover{ background:#e2e2e2; color:#000; }
+  .filter-pill.active{ background:var(--gold); color:#000; }
+  .filter-pill .count{ opacity:.55; margin-left:5px; font-weight:600; }
+  .archive-search{ background:#fff; border:1px solid #e2e2e2; border-radius:999px; margin:4px 0 12px; }
+  .archive-search .icon{ color:#777; }
+
+  /* --- poster grid --- */
+  .grid{ grid-template-columns:repeat(3,1fr); gap:8px; }
+  .poster-card, .poster-art{ border-radius:6px; }
+  .poster-art{ background:#dcdcdc; box-shadow:none; }
+  .poster-caption .t{ color:#fff; font-weight:600; } .poster-caption .y{ color:var(--gold); }
+  .cat-section{ margin-bottom:22px; }
+  .cat-section-header{ font:700 22px var(--font-display); color:#000; border-bottom:0; padding-bottom:0; margin:6px 2px 10px; letter-spacing:0; }
+  .cat-section-count{ color:#8c8c8c; font-weight:600; }
+  .tv-status-bar{ height:10px; }
+  .empty-state{ text-align:center; padding:70px 20px 40px; }
+  .empty-state .big{ font:700 28px var(--font-display); color:#000; margin-bottom:6px; }
+  .es-art{ width:150px; height:150px; margin:14px auto 18px; border-radius:50%; background:var(--gold); display:flex; align-items:center; justify-content:center; }
+  .es-art svg{ width:78px; height:78px; stroke:#000; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .es-sub{ font:400 20px var(--font-body); color:#222; margin-bottom:24px; }
+  .yellow-btn{ background:var(--gold); color:#000; border:0; border-radius:999px; padding:16px 34px; font:700 17px var(--font-display); letter-spacing:.04em; text-transform:uppercase; cursor:pointer; }
+  .yellow-btn:active{ transform:scale(.97); }
+  @media (min-width:600px){ .grid{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:14px 12px; } }
+
+  /* --- Explore --- */
+  #viewExplore{ padding:14px 16px 30px; }
+  #viewExplore .ticket-window{ background:none; border:0; border-bottom:2px solid #bdbdbd; border-radius:0; padding:8px 4px; display:flex; align-items:center; gap:12px; box-shadow:none; }
+  #viewExplore .ticket-window::before, #viewExplore .ticket-window::after{ display:none; }
+  #viewExplore .ticket-window .icon{ font-size:24px; color:#777; }
+  #viewExplore .ticket-window input{ font:500 20px var(--font-body); color:#000; }
+  #viewExplore .search-results{ margin:12px 0; background:transparent; border:0; max-height:none; overflow:visible; }
+  .search-row{ background:#fff; border:0; border-radius:12px; margin-bottom:8px; padding:10px 12px; }
+  .search-row:hover, .search-row.kbd-active{ background:#fff7c2; }
+  .search-row img{ border-radius:6px; }
+  .search-row .meta .t{ font-weight:600; font-size:16px; } .search-row .meta .y{ font-family:var(--font-body); font-size:13px; }
+  .search-row .add-badge{ background:var(--gold); color:#000; border:0; border-radius:999px; font:700 12px var(--font-display); padding:7px 14px; letter-spacing:.05em; }
+  .cat-chip{ color:#000; background:#f0f0f0; border:0; border-radius:999px; padding:9px 14px; font:600 12px var(--font-display); }
+  .cat-chip:hover{ background:var(--gold); color:#000; }
+  .explore-card{ display:flex; align-items:center; gap:14px; width:100%; margin-top:22px; text-align:left; background:var(--gold); border:0; border-radius:16px; padding:18px; font:700 18px var(--font-display); color:#000; cursor:pointer; }
+  .explore-card small{ display:block; font:500 14px var(--font-body); margin-top:3px; color:#3a3000; }
+  .explore-card .em{ font-size:32px; }
+  .explore-hint{ margin-top:18px; color:#777; font:400 15px var(--font-body); }
+
+  /* --- Upcoming --- */
+  .up-group-h{ font:700 20px var(--font-display); text-transform:uppercase; letter-spacing:.02em; padding:18px 16px 8px; }
+  .up-row{ display:flex; align-items:center; gap:12px; background:#fff; margin:0 12px 8px; padding:10px; border-radius:14px; cursor:pointer; }
+  .up-row img, .up-row .nop{ width:56px; height:84px; flex:none; object-fit:cover; border-radius:6px; background:#e4e4e4; }
+  .up-meta{ min-width:0; flex:1; } .up-meta .t{ font:700 17px var(--font-display); } .up-meta .e{ font:400 14px var(--font-body); color:#666; margin-top:2px; }
+  .up-date{ text-align:right; font:700 15px var(--font-display); white-space:nowrap; }
+  .up-date .chip{ display:inline-block; background:var(--gold); border-radius:999px; padding:3px 10px; font-size:12px; margin-top:5px; }
+  .up-empty{ text-align:center; padding:70px 24px; color:#555; font:400 18px var(--font-body); }
+  .up-empty b{ display:block; font:700 26px var(--font-display); color:#000; margin-bottom:8px; }
+
+  /* --- Profile --- */
+  #viewProfile{ background:#fff; min-height:100vh; padding-bottom:30px; }
+  #viewProfile header.marquee{ display:block; background:linear-gradient(180deg,#4a4a4a,#111); border:0; padding:calc(54px + env(safe-area-inset-top)) 20px 22px; }
+  #viewProfile .marquee-inner{ display:block; }
+  #viewProfile .marquee-title{ color:#fff; font:700 36px var(--font-display); letter-spacing:.01em; line-height:1; }
+  #archiveTitlePart2{ color:var(--gold); }
+  #viewProfile .marquee-sub{ color:#c9c9c9; font:400 14px var(--font-body); text-transform:none; letter-spacing:0; }
+  #viewProfile .library-tabs{ background:rgba(255,255,255,.14); border:0; margin-top:16px; }
+  #viewProfile .library-tab{ color:#ddd; font:700 12px var(--font-display); padding:9px 16px; }
+  #viewProfile .library-tab.active{ background:var(--gold); color:#000; }
+  #viewProfile .edit-branding-btn{ color:#bdbdbd; font:500 13px var(--font-body); margin-top:12px; }
+  .profile-stats{ display:grid; grid-template-columns:repeat(3,1fr); gap:0; border-bottom:1px solid #ddd; }
+  .profile-stats .stat{ text-align:center; padding:14px 0 12px; border-right:1px solid #ddd; } .profile-stats .stat:last-child{ border-right:0; }
+  .profile-stats .stat-num{ font:700 26px var(--font-display); color:#000; }
+  .profile-stats .stat-label{ font:400 16px var(--font-body); letter-spacing:0; text-transform:none; color:#222; margin-top:2px; }
+  .p-sec{ padding:24px 16px 4px; }
+  .p-head{ display:flex; align-items:center; gap:10px; font:700 32px var(--font-display); margin-bottom:12px; cursor:pointer; }
+  .p-head .chev{ margin-left:auto; display:flex; }
+  .p-heart{ width:34px; height:34px; border-radius:50%; background:#e60012; display:flex; align-items:center; justify-content:center; flex:none; }
+  .p-heart svg{ width:19px; height:19px; fill:#fff; }
+  .p-card{ background:#f4f4f4; border-radius:14px; padding:18px 14px; }
+  .p-nums{ display:grid; grid-template-columns:repeat(3,1fr); text-align:center; margin-bottom:16px; }
+  .p-nums b{ display:block; font:700 30px var(--font-display); } .p-nums span{ font:400 15px var(--font-body); color:#555; }
+  .outline-btn{ display:block; margin:0 auto; background:transparent; border:2px solid #000; border-radius:999px; padding:12px 26px; font:700 15px var(--font-display); letter-spacing:.05em; text-transform:uppercase; cursor:pointer; color:#000; }
+  .list-grp{ font:600 14px var(--font-body); color:#777; text-transform:uppercase; letter-spacing:.08em; margin:4px 2px 8px; }
+  .list-row{ display:flex; align-items:center; width:100%; background:#f4f4f4; border:0; border-radius:14px; padding:16px; margin-bottom:8px; font:600 18px var(--font-display); color:#000; cursor:pointer; text-align:left; }
+  .list-row b{ margin-left:auto; margin-right:10px; font-weight:600; color:#666; }
+  .p-rowscroll{ display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; scroll-snap-type:x proximity; }
+  .p-rowscroll::-webkit-scrollbar{ display:none; }
+  .mini{ position:relative; flex:0 0 112px; aspect-ratio:2/3; border-radius:6px; overflow:hidden; background:#e5e5e5; cursor:pointer; scroll-snap-align:start; }
+  .mini .poster-art{ border-radius:6px; }
+  .mini img{ width:100%; height:100%; object-fit:cover; display:block; -webkit-user-drag:none; user-select:none; }
+  .mini .fallback{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center; padding:8px; font:600 13px var(--font-body); color:#555; }
+  .p-empty{ color:#888; font:400 15px var(--font-body); padding:22px 0; text-align:center; }
+  #profileTools{ padding:26px 16px 0; }
+  #profileTools .util-bar{ margin-bottom:8px; }
+  #profileTools .util-bar{ display:flex; flex-direction:column; gap:8px; }
+  #profileTools #statsBtn{ display:none; }
+  #profileTools .util-btn{ text-transform:none; letter-spacing:0; text-align:left; background:#f4f4f4; border:0; border-radius:14px; padding:16px; font:600 16px var(--font-display); color:#000; }
+  #profileTools .util-btn:disabled{ opacity:.45; }
+
+
+
+  /* --- Explore (discover) --- */
+  .ex-toolbar{ display:flex; align-items:center; gap:10px; margin:16px 0 4px; flex-wrap:wrap; }
+  .ex-seg{ display:inline-flex; background:#ececec; border-radius:999px; padding:4px; }
+  .ex-seg button{ border:0; background:none; padding:10px 20px; border-radius:999px; font:700 14px var(--font-display); letter-spacing:.04em; text-transform:uppercase; cursor:pointer; color:#000; transition:background .15s; }
+  .ex-seg button.on{ background:var(--gold); }
+  .ex-surprise{ margin-left:auto; background:#000; color:#fff; border:0; border-radius:999px; padding:11px 16px; font:700 14px var(--font-display); letter-spacing:.03em; cursor:pointer; }
+  #viewExplore.searching .ex-toolbar, #viewExplore.searching #exploreDiscover{ display:none; }
+  .ex-hero{ display:flex; gap:10px; overflow-x:auto; scroll-snap-type:x mandatory; margin:12px 0 2px; scrollbar-width:none; }
+  .ex-hero::-webkit-scrollbar, .ex-scroll::-webkit-scrollbar{ display:none; }
+  .ex-slide{ flex:0 0 100%; aspect-ratio:16/9; border-radius:16px; background:#dcdcdc center/cover; position:relative; overflow:hidden; scroll-snap-align:start; cursor:pointer; }
+  .ex-slide::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg,transparent 35%,rgba(0,0,0,.82)); }
+  .ex-slide-in{ position:absolute; left:16px; right:16px; bottom:14px; z-index:2; color:#fff; }
+  .ex-slide-in .t{ font:700 24px var(--font-display); line-height:1.1; text-shadow:0 1px 8px rgba(0,0,0,.5); }
+  .ex-slide-in .m{ font:500 14px var(--font-body); opacity:.9; margin-top:4px; }
+  .ex-pill{ position:absolute; right:14px; top:14px; z-index:2; background:var(--gold); color:#000; border-radius:999px; padding:7px 14px; font:700 12px var(--font-display); letter-spacing:.05em; text-transform:uppercase; }
+  .ex-slide:not(.in-lib) .ex-pill::before{ content:"+ Add"; } .ex-slide.in-lib .ex-pill::before{ content:"✓ In your lists"; }
+  .ex-sec{ margin-top:22px; }
+  .ex-h{ font:700 24px var(--font-display); margin-bottom:10px; }
+  .ex-scroll{ display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; scroll-snap-type:x proximity; }
+  .ex-card{ flex:0 0 116px; aspect-ratio:2/3; border-radius:8px; overflow:hidden; position:relative; background:#e5e5e5; cursor:pointer; scroll-snap-align:start; }
+  .ex-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .ex-card .ex-in{ position:absolute; right:6px; bottom:6px; width:24px; height:24px; border-radius:50%; background:var(--gold); display:none; align-items:center; justify-content:center; font:700 13px var(--font-display); }
+  .ex-card.in-lib .ex-in{ display:flex; }
+  .ex-card.sk, .ex-slide.sk{ background:linear-gradient(90deg,#e6e6e6,#f3f3f3,#e6e6e6); background-size:200% 100%; animation:ex-sk 1.2s linear infinite; cursor:default; }
+  @keyframes ex-sk{ to{ background-position:-200% 0; } }
+  .ex-fail{ text-align:center; color:#777; padding:40px 10px; font:400 16px var(--font-body); }
+  @media (min-width:700px){ .ex-card{ flex-basis:140px; } .ex-slide{ flex-basis:min(100%,680px); } }
+  @media (min-width:900px){ #viewExplore{ max-width:1000px; } }
+
+  /* --- bottom sheet (add to list / new category) --- */
+  .sh-overlay{ position:fixed; inset:0; z-index:300; background:rgba(0,0,0,.5); display:none; align-items:flex-end; justify-content:center; }
+  .sh-overlay.open{ display:flex; }
+  .sh-sheet{ background:#fff; width:100%; max-width:560px; border-radius:22px 22px 0 0; padding:20px 18px calc(22px + env(safe-area-inset-bottom)); max-height:88vh; overflow:auto; animation:sh-up .22s ease-out; }
+  @keyframes sh-up{ from{ transform:translateY(40px); opacity:0; } to{ transform:none; opacity:1; } }
+  @media (min-width:700px){ .sh-overlay{ align-items:center; } .sh-sheet{ border-radius:22px; } }
+  .sh-top{ display:flex; gap:14px; }
+  .sh-top img, .sh-top .nop{ width:104px; flex:none; aspect-ratio:2/3; object-fit:cover; border-radius:8px; background:#e5e5e5; }
+  .sh-title{ font:700 24px var(--font-display); line-height:1.15; }
+  .sh-meta{ font:500 14px var(--font-body); color:#666; margin:4px 0 8px; }
+  .sh-over{ font:400 14px/1.45 var(--font-body); color:#333; display:-webkit-box; -webkit-line-clamp:6; -webkit-box-orient:vertical; overflow:hidden; }
+  .sh-lbl{ font:700 13px var(--font-display); letter-spacing:.08em; text-transform:uppercase; color:#777; margin:18px 0 8px; }
+  .sh-chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .sh-chip{ border:0; background:#f0f0f0; border-radius:999px; padding:11px 16px; font:700 14px var(--font-display); cursor:pointer; color:#000; }
+  .sh-chip:hover, .sh-chip.on{ background:var(--gold); }
+  .sh-note{ background:#f4f4f4; border-radius:12px; padding:14px; font:500 15px var(--font-body); margin-top:16px; }
+  .sh-input{ width:100%; border:0; border-bottom:2px solid #bbb; font:500 22px var(--font-body); padding:10px 2px; outline:none; margin-top:6px; background:none; }
+  .sh-input:focus{ border-bottom-color:#000; }
+  .sh-go{ width:100%; margin-top:22px; }
+  .add-cat{ display:flex; align-items:center; justify-content:center; gap:8px; width:calc(100% - 32px); margin:22px 16px 0; padding:16px; border:2px dashed #b5b5b5; border-radius:14px; background:none; font:700 16px var(--font-display); color:#000; cursor:pointer; }
+  .add-cat:hover{ border-color:#000; }
+  .p-count{ font:600 16px var(--font-display); color:#999; margin-left:2px; }
+  .p-unpin{ margin-left:auto; width:30px; height:30px; border-radius:50%; border:0; background:#eee; color:#555; font:700 18px/1 var(--font-body); cursor:pointer; flex:none; }
+  .p-unpin:hover{ background:#e0e0e0; color:#000; }
+  .p-unpin ~ .chev{ margin-left:6px; }
+
+
+  /* --- Profile stats: TV Shows and Movies shown separately --- */
+  .profile-stats{ display:none; }
+  .st-grid{ display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:14px; }
+  @media (min-width:620px){ .st-grid{ grid-template-columns:1fr 1fr; } }
+  .st-box{ background:#f4f4f4; border-radius:14px; padding:16px 16px 14px; }
+  .st-t{ display:flex; align-items:center; gap:8px; font:700 14px var(--font-display); letter-spacing:.08em; text-transform:uppercase; color:#555; }
+  .st-t svg{ width:22px; height:22px; stroke:#000; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .st-big{ font:700 42px var(--font-display); line-height:1; margin-top:12px; }
+  .st-big small{ font:600 16px var(--font-body); color:#666; margin-left:6px; }
+  .st-sub{ font:400 14px var(--font-body); color:#666; margin-top:5px; }
+  .st-mini{ display:grid; grid-template-columns:repeat(3,1fr); margin-top:14px; padding-top:12px; border-top:1px solid #dedede; text-align:center; }
+  .st-mini b{ display:block; font:700 22px var(--font-display); } .st-mini span{ font:400 13px var(--font-body); color:#666; }
+
+  /* --- readability fixes for the older popups on the light theme --- */
+  .flip-face .num, .detail-rating, .branding-section-title, .cat-section-title, .util-btn.has-actions{ color:#000; }
+  .surprise-action.primary, .branding-save-btn, .cat-add-btn{ background:var(--gold); border-color:var(--gold); color:#000; }
+  .detail-poster-edit:hover{ color:#000; }
+
+  /* --- misc --- */
+  .toast{ bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom)); }
+  .machine-fab{ display:none !important; }   /* replaced by the Activity feed button in Profile */
+  .toast{ max-width:calc(100vw - 32px); text-align:center; white-space:normal; }
+  @media (min-width:900px){
+    body{ padding-bottom:0; padding-left:96px; }
+    .bottom-nav{ right:auto; top:0; width:96px; flex-direction:column; justify-content:flex-start; gap:8px; padding:22px 0; border-top:0; border-right:1px solid #ddd; }
+    .nav-btn{ flex:0 0 auto; padding:14px 0; }
+    .top-tab{ flex:0 0 240px; }
+    .toast, .machine-fab{ bottom:20px; }
+    #viewProfile{ max-width:860px; } #viewUpcoming{ max-width:860px; } #viewExplore{ max-width:760px; }
+    #viewProfile header.marquee{ border-radius:0 0 18px 18px; }
+  }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 </head>
-<body>
+<body data-view="shows" data-screen="watch">
+<div class="app-top" id="appTop">
+  <button type="button" class="top-tab active" data-sub="watch">Watch list</button>
+  <button type="button" class="top-tab" data-sub="upcoming">Upcoming</button>
+</div>
 
 <header class="marquee">
   <div class="marquee-inner">
@@ -1120,6 +1350,23 @@
 
 <footer>Personal archive · posters via TMDB</footer>
 <div class="toast" id="toast"></div>
+<section class="view" id="viewExplore">
+  <div id="exploreSearchSlot"></div>
+  <div class="ex-toolbar">
+    <div class="ex-seg" id="exSeg"><button type="button" class="on" data-t="tv">Shows</button><button type="button" data-t="movie">Movies</button></div>
+    <button type="button" class="ex-surprise" id="exploreSurprise" title="Picks a random movie from your Unwatched list">&#127922; Surprise me</button>
+  </div>
+  <div id="exploreDiscover"></div>
+</section>
+<section class="view" id="viewUpcoming"></section>
+<section class="view" id="viewProfile"><div id="profileBody"></div><div id="profileTools"></div></section>
+<nav class="bottom-nav" id="bottomNav" aria-label="Main">
+  <button type="button" class="nav-btn active" data-view="shows"><svg viewBox="0 0 28 28"><rect x="3.5" y="8.5" width="21" height="14" rx="2.5"/><path d="M9.5 3.5 14 8.5l4.5-5"/></svg><span>Shows</span></button>
+  <button type="button" class="nav-btn" data-view="movies"><svg viewBox="0 0 28 28"><rect x="3.5" y="11.5" width="21" height="12" rx="2"/><path d="M3.5 11.5l1.4-5.2 20.1-1.2.9 6.4M9 6.1l2.6 4.9M15 5.4l2.6 4.9M20.8 4.6l2.4 4.6"/></svg><span>Movies</span></button>
+  <button type="button" class="nav-btn" data-view="explore"><svg viewBox="0 0 28 28"><circle cx="12.5" cy="12.5" r="8"/><path d="m18.5 18.5 6 6"/></svg><span>Explore</span></button>
+  <button type="button" class="nav-btn" data-view="profile"><svg viewBox="0 0 28 28"><circle cx="14" cy="9.5" r="5"/><path d="M4.5 24c.8-5 4.6-7.5 9.5-7.5s8.7 2.5 9.5 7.5z"/></svg><span>Profile</span></button>
+</nav>
+
 
 <!-- ======= THE MACHINE ======= -->
 <div class="machine-gate" id="machineGate">
@@ -2155,6 +2402,9 @@ const itemsDocRef = doc(db, "tracker", "items");
     const running = (d.status === 'Returning Series' || d.status === 'In Production' || d.status === 'Planned' || d.status === 'Pilot');
     item.showStatus = ended ? 'ended' : running ? 'ongoing' : (d.in_production ? 'ongoing' : 'ended');
     item.showStatusAt = Date.now();
+    const ne = d.next_episode_to_air;
+    item.nextEp = (ne && ne.air_date) ? {date: ne.air_date, s: ne.season_number, e: ne.episode_number, name: ne.name || ''} : null;
+    item.nextEpAt = Date.now();
     return true;
   }
   function statusBarColor(item){
@@ -2167,9 +2417,9 @@ const itemsDocRef = doc(db, "tracker", "items");
     return null;
   }
   function needsShowStatus(item){
-    if(item.type !== 'tv' || !item.tmdbId || !STATUS_BAR_CATS.includes(item.category)) return false;
+    if(item.type !== 'tv' || !item.tmdbId || item.category === 'stopped') return false;
     if(!item.showStatus) return true;
-    return item.showStatus === 'ongoing' && (Date.now() - (item.showStatusAt || 0)) > SHOW_STATUS_TTL;
+    return item.showStatus === 'ongoing' && (Date.now() - (item.nextEpAt || 0)) > 24 * 3600 * 1000;
   }
   function applyStatusBar(card, item){
     const old = card.querySelector('.tv-status-bar');
@@ -2183,12 +2433,11 @@ const itemsDocRef = doc(db, "tracker", "items");
     }
   }
   function scheduleStatusBackfill(){
-    if(activeLibrary !== 'english') return;
     clearTimeout(statusBackfillTimer);
     statusBackfillTimer = setTimeout(runStatusBackfill, 500);
   }
   async function runStatusBackfill(){
-    if(statusBackfillRunning || activeLibrary !== 'english') return;
+    if(statusBackfillRunning) return;
     const lib = activeLibrary;
     const queue = state.items.filter(needsShowStatus);
     if(!queue.length) return;
@@ -2207,7 +2456,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     }
     await Promise.all(Array.from({length: 6}, worker));
     statusBackfillRunning = false;
-    if(changed && activeLibrary === lib) persist();
+    if(changed && activeLibrary === lib){ persist(); if(document.body.dataset.screen === 'upcoming') renderUpcoming(); }
   }
 
   function buildCard(item){
@@ -3920,6 +4169,378 @@ const itemsDocRef = doc(db, "tracker", "items");
       if(activeLibrary === 'english') renderStats();
     });
   }
+
+  // ================= TV TIME–STYLE SHELL (navigation, profile, upcoming) =================
+  const shEl = id => document.getElementById(id);
+  const SH_CHEV = '<svg viewBox="0 0 24 24" width="26" height="26"><path d="m9 5 7 7-7 7" fill="none" stroke="#000" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const SH_HEART = '<span class="p-heart"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.3 2.7 4.8 6.2 4.8c2 0 3.6 1.1 4.4 2.6h2.8c.8-1.5 2.4-2.6 4.4-2.6 3.5 0 5.3 3.5 3.8 6.9C19.5 16.4 12 21 12 21z"/></svg></span>';
+  let shView = 'shows', shSub = 'watch';
+
+  (function buildShell(){
+    // header (title, library tabs) becomes the Profile header; stat strip becomes the 3-cell row under it
+    const profile = shEl('viewProfile');
+    const hdr = document.querySelector('header.marquee');
+    const strip = hdr.querySelector('.stat-strip');
+    profile.insertBefore(hdr, profile.firstChild);
+    strip.classList.add('profile-stats');
+    profile.insertBefore(strip, shEl('profileBody'));
+    // tools list lives at the bottom of Profile
+    shEl('profileTools').appendChild(document.querySelector('.util-bar'));
+    const feedBtn = document.createElement('button');
+    feedBtn.type = 'button'; feedBtn.className = 'util-btn'; feedBtn.style.cssText = 'width:100%;';
+    feedBtn.innerHTML = '&#128065; Activity feed';
+    feedBtn.addEventListener('click', () => shEl('machineFab').click());
+    shEl('profileTools').appendChild(feedBtn);
+    // add-search lives in Explore
+    shEl('exploreSearchSlot').appendChild(document.querySelector('.ticket-window'));
+    shEl('exploreSearchSlot').appendChild(shEl('searchResults'));
+    shEl('searchInput').placeholder = 'Search shows & movies to add';
+    // friendlier empty state
+    emptyState.innerHTML = '<div class="es-art"><svg viewBox="0 0 28 28"><rect x="3.5" y="8.5" width="21" height="14" rx="2.5"/><path d="M9.5 3.5 14 8.5l4.5-5"/></svg></div><div class="big">Nothing here yet!</div><div class="es-sub" id="esSub"></div><button type="button" class="yellow-btn" id="esBtn"></button>';
+    shEl('esBtn').addEventListener('click', () => setScreen('explore'));
+  })();
+
+  function shUpdateEmpty(){
+    const mv = shView === 'movies';
+    shEl('esSub').textContent = mv ? 'Add movies you want to watch.' : 'Add shows you want to watch.';
+    shEl('esBtn').textContent = mv ? 'Browse all movies' : 'Browse all shows';
+  }
+
+  function setScreen(view, sub){
+    shView = view;
+    if(sub) shSub = sub;
+    if(view === 'movies') shSub = 'watch';
+    const screen = view === 'explore' ? 'explore' : view === 'profile' ? 'profile' : (view === 'shows' && shSub === 'upcoming' ? 'upcoming' : 'watch');
+    document.body.dataset.view = view;
+    document.body.dataset.screen = screen;
+    document.querySelectorAll('#bottomNav .nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    document.querySelectorAll('#appTop .top-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === (screen === 'upcoming' ? 'upcoming' : 'watch')));
+    if(view === 'shows' || view === 'movies'){
+      const t = view === 'shows' ? 'tv' : 'movie';
+      if(state.activeType !== t) document.querySelector('.type-tab[data-type="' + t + '"]').click();
+      shUpdateEmpty();
+    }
+    if(screen === 'profile') renderProfile();
+    if(screen === 'explore') renderExplore();
+    if(screen === 'upcoming'){ renderUpcoming(); scheduleStatusBackfill(); }
+    window.scrollTo(0, 0);
+  }
+  function openList(view, filter){
+    setScreen(view, 'watch');
+    state.activeFilter = filter || 'all';
+    renderFilters();
+    navTransition(renderGrid);
+  }
+  shEl('bottomNav').addEventListener('click', e => {
+    const b = e.target.closest('.nav-btn'); if(!b) return;
+    if(b.dataset.view === shView){
+      if(shView === 'shows' || shView === 'movies'){ if(shSub !== 'watch' || state.activeFilter !== 'all'){ openList(shView, 'all'); return; } }
+      window.scrollTo({top:0, behavior:'smooth'}); return;
+    }
+    setScreen(b.dataset.view, 'watch');
+  });
+  shEl('appTop').addEventListener('click', e => {
+    const b = e.target.closest('.top-tab'); if(!b) return;
+    setScreen(shView, b.dataset.sub);
+  });
+  shEl('exploreSurprise').addEventListener('click', () => shEl('surpriseBtn').click());
+
+  // ---------- Profile ----------
+  function shMini(i){
+    const inner = i.posterPath ? '<img src="' + IMG_BASE + i.posterPath + '" alt="" loading="lazy" draggable="false">' : '<div class="fallback">' + escapeHtml(i.title) + '</div>';
+    return '<div class="mini" data-id="' + i.id + '"><div class="poster-art">' + inner + '</div></div>';
+  }
+  function shRow(title, items, go, filter, heart, unpin){
+    const body = items.length
+      ? '<div class="p-rowscroll">' + items.slice(0, 16).map(shMini).join('') + '</div>'
+      : '<div class="p-card"><div class="p-empty">Nothing here yet</div></div>';
+    return '<div class="p-sec"><div class="p-head" data-go="' + go + '" data-filter="' + (filter || 'all') + '">' + (heart ? SH_HEART : '') + '<span>' + title + '</span><span class="p-count">' + items.length + '</span>' +
+      (unpin ? '<button type="button" class="p-unpin" data-unpin="' + unpin + '" title="Remove from Profile" aria-label="Remove from Profile">&times;</button>' : '') +
+      '<span class="chev">' + SH_CHEV + '</span></div>' + body + '</div>';
+  }
+  const shStatsDone = {};
+  function shStatsNeeded(){
+    return watchedMovies().some(i => !i.runtimeMin && i.tmdbId) || watchedShows().some(i => !i.epCount && i.tmdbId);
+  }
+  function shLoadStatsOnce(){
+    const lib = activeLibrary;
+    if(shStatsDone[lib] !== undefined) return;
+    shStatsDone[lib] = false;
+    ensureStatsData().catch(() => {}).then(() => {
+      shStatsDone[lib] = true;
+      if(activeLibrary === lib && document.body.dataset.screen === 'profile') renderProfile();
+    });
+  }
+  function renderProfile(){
+    const host = shEl('profileBody');
+    const all = state.items;
+    const tv = all.filter(i => i.type === 'tv'), mv = all.filter(i => i.type === 'movie');
+    const fin = all.filter(i => i.category === 'finished').length;
+    // categories the user chose to show on Profile (in the order they were added)
+    const pinned = [];
+    ['tv', 'movie'].forEach(t => (state.categories[t] || []).forEach(c => { if(c.pinned) pinned.push({t, c}); }));
+    pinned.sort((a, b) => a.c.pinned - b.c.pinned);
+    const labelCount = {};
+    ['tv', 'movie'].forEach(t => (state.categories[t] || []).forEach(c => { const k = c.label.toLowerCase(); labelCount[k] = (labelCount[k] || 0) + 1; }));
+    const pinnedRows = pinned.map(({t, c}) => {
+      const dup = labelCount[c.label.toLowerCase()] > 1;
+      const title = escapeHtml(c.label) + (dup ? ' <span class="p-count" style="margin-left:0">· ' + (t === 'tv' ? 'Shows' : 'Movies') + '</span>' : '');
+      return shRow(title, all.filter(i => i.type === t && i.category === c.key), t === 'tv' ? 'shows' : 'movies', c.key, false, t + '|' + c.key);
+    }).join('');
+    const wm = watchedMovies(), ws = watchedShows();
+    const movMin = wm.reduce((x, i) => x + (i.runtimeMin || 0), 0);
+    const tvMin = ws.reduce((x, i) => x + effectiveEpisodeCount(i) * (i.epRuntimeMin || 0), 0);
+    const eps = ws.reduce((x, i) => x + effectiveEpisodeCount(i), 0);
+    const loading = shStatsNeeded() && !shStatsDone[activeLibrary];
+    const hrs = m => loading ? '…' : Math.round(m / 60).toLocaleString();
+    const days = m => (m / 60 / 24).toFixed(1);
+    const stBox = (icon, title, mins, sub, a, b, c) =>
+      '<div class="st-box"><div class="st-t">' + icon + title + '</div><div class="st-big">' + hrs(mins) + '<small>hours</small></div><div class="st-sub">' + sub + '</div>' +
+      '<div class="st-mini"><div><b>' + a[0] + '</b><span>' + a[1] + '</span></div><div><b>' + b[0] + '</b><span>' + b[1] + '</span></div><div><b>' + c[0] + '</b><span>' + c[1] + '</span></div></div></div>';
+    const tvIcon = '<svg viewBox="0 0 28 28"><rect x="3.5" y="8.5" width="21" height="14" rx="2.5"/><path d="M9.5 3.5 14 8.5l4.5-5"/></svg>';
+    const mvIcon = '<svg viewBox="0 0 28 28"><rect x="3.5" y="11.5" width="21" height="12" rx="2"/><path d="M3.5 11.5l1.4-5.2 20.1-1.2.9 6.4M9 6.1l2.6 4.9M15 5.4l2.6 4.9M20.8 4.6l2.4 4.6"/></svg>';
+    host.innerHTML =
+      '<div class="p-sec"><div class="p-head" data-stats="1"><span>Stats</span><span class="chev">' + SH_CHEV + '</span></div>' +
+        '<div class="st-grid">' +
+          stBox(tvIcon, 'TV Shows', tvMin, loading ? 'Crunching your numbers…' : eps.toLocaleString() + ' episodes &middot; ' + days(tvMin) + ' days', [tv.length, 'shows'], [tv.filter(i => i.category === 'finished').length, 'finished'], [tv.filter(i => i.category === 'favourite').length, 'favourites']) +
+          stBox(mvIcon, 'Movies', movMin, loading ? 'Crunching your numbers…' : days(movMin) + ' days of movies', [mv.length, 'movies'], [wm.length, 'watched'], [mv.filter(i => i.category === 'favourite').length, 'favourites']) +
+        '</div>' +
+        '<button type="button" class="outline-btn" data-stats="1">Full stats</button></div>' +
+      '<button type="button" class="add-cat" data-pick="1">+ Add category</button>' +
+      pinnedRows +
+      shRow('Shows', tv, 'shows', 'all', false) +
+      shRow('Favorite shows', tv.filter(i => i.category === 'favourite'), 'shows', 'favourite', true) +
+      shRow('Movies', mv, 'movies', 'all', false) +
+      shRow('Favorite movies', mv.filter(i => i.category === 'favourite'), 'movies', 'favourite', true);
+    if(shStatsNeeded()) shLoadStatsOnce(); else shStatsDone[activeLibrary] = true;
+    host.querySelectorAll('.mini').forEach(el => {
+      const it = all.find(x => x.id === el.dataset.id);
+      if(it) applyStatusBar(el, it);
+    });
+  }
+  shEl('profileBody').addEventListener('click', e => {
+    const mini = e.target.closest('.mini');
+    if(mini){ openDetail(mini.dataset.id); return; }
+    const un = e.target.closest('[data-unpin]');
+    if(un){ const [t, k] = un.dataset.unpin.split('|'); togglePin(t, k); return; }
+    if(e.target.closest('[data-pick]')){ openPicker(); return; }
+    if(e.target.closest('[data-stats]')){ shEl('statsBtn').click(); return; }
+    const go = e.target.closest('[data-go]');
+    if(go) openList(go.dataset.go, go.dataset.filter);
+  });
+
+  // ---------- Upcoming episodes ----------
+  function shDayDiff(dateStr){
+    const t = new Date(); t.setHours(0,0,0,0);
+    const d = new Date(dateStr + 'T00:00:00');
+    return Math.round((d - t) / 86400000);
+  }
+  function renderUpcoming(){
+    const host = shEl('viewUpcoming');
+    const rows = state.items
+      .filter(i => i.type === 'tv' && i.category !== 'stopped' && i.nextEp && i.nextEp.date && shDayDiff(i.nextEp.date) >= 0)
+      .sort((a, b) => a.nextEp.date.localeCompare(b.nextEp.date));
+    if(!rows.length){
+      host.innerHTML = '<div class="up-empty"><b>' + (statusBackfillRunning ? 'Checking your shows…' : 'Nothing upcoming') + '</b>Episodes of shows that are still airing will appear here.</div>';
+      return;
+    }
+    const groupOf = n => n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n <= 7 ? 'This week' : n <= 14 ? 'Next week' : 'Later';
+    let html = '', last = '';
+    rows.forEach(i => {
+      const n = shDayDiff(i.nextEp.date), g = groupOf(n);
+      if(g !== last){ html += '<div class="up-group-h">' + g + '</div>'; last = g; }
+      const d = new Date(i.nextEp.date + 'T00:00:00');
+      const ds = d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
+      const ep = 'S' + String(i.nextEp.s).padStart(2,'0') + 'E' + String(i.nextEp.e).padStart(2,'0') + (i.nextEp.name ? ' · ' + escapeHtml(i.nextEp.name) : '');
+      const img = i.posterPath ? '<img src="' + IMG_BASE + i.posterPath + '" alt="" loading="lazy">' : '<div class="nop"></div>';
+      html += '<div class="up-row" data-id="' + i.id + '">' + img + '<div class="up-meta"><div class="t">' + escapeHtml(i.title) + '</div><div class="e">' + ep + '</div></div><div class="up-date">' + ds + '<br><span class="chip">' + (n === 0 ? 'today' : n === 1 ? 'tomorrow' : 'in ' + n + ' days') + '</span></div></div>';
+    });
+    host.innerHTML = html;
+  }
+  shEl('viewUpcoming').addEventListener('click', e => {
+    const r = e.target.closest('.up-row'); if(r) openDetail(r.dataset.id);
+  });
+
+  // ---------- bottom sheet (shared by Explore "add to list" and "new category") ----------
+  const shSheet = document.createElement('div');
+  shSheet.className = 'sh-overlay';
+  shSheet.innerHTML = '<div class="sh-sheet" id="shSheetBody"></div>';
+  document.body.appendChild(shSheet);
+  function shOpenSheet(html){ shEl('shSheetBody').innerHTML = html; shSheet.classList.add('open'); }
+  function shCloseSheet(){ shSheet.classList.remove('open'); }
+  shSheet.addEventListener('click', e => { if(e.target === shSheet) shCloseSheet(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') shCloseSheet(); });
+
+  // ---------- Profile: choose which of your categories show as poster rows ----------
+  function openPicker(){
+    const grp = (t, lbl) => {
+      const cats = state.categories[t] || [];
+      return '<div class="sh-lbl">' + lbl + '</div><div class="sh-chips">' + cats.map(c => {
+        const n = state.items.filter(i => i.type === t && i.category === c.key).length;
+        return '<button type="button" class="sh-chip' + (c.pinned ? ' on' : '') + '" data-pin="' + t + '|' + c.key + '">' + (c.pinned ? '&#10003; ' : '') + escapeHtml(c.label) + ' <span style="opacity:.55">' + n + '</span></button>';
+      }).join('') + '</div>';
+    };
+    shOpenSheet('<div class="sh-title">Add a category</div><div class="sh-meta">Pick any category you already have and it shows on your Profile as a row of posters, above the defaults. Tap again to remove it.</div>' +
+      grp('tv', 'Shows') + grp('movie', 'Movies') + '<button type="button" class="yellow-btn sh-go" id="pkDone">Done</button>');
+  }
+  function togglePin(t, key){
+    const c = (state.categories[t] || []).find(x => x.key === key);
+    if(!c) return;
+    if(c.pinned) delete c.pinned; else c.pinned = Date.now();
+    persist();
+    renderProfile();
+  }
+  shEl('shSheetBody').addEventListener('click', e => {
+    const pin = e.target.closest('.sh-chip[data-pin]');
+    if(pin){
+      const sc = shEl('shSheetBody').scrollTop;
+      const [t, k] = pin.dataset.pin.split('|');
+      togglePin(t, k); openPicker(); shEl('shSheetBody').scrollTop = sc; return;
+    }
+    if(e.target.closest('#pkDone')){ shCloseSheet(); return; }
+    const chip = e.target.closest('.sh-chip[data-cat]');
+    if(chip) exAdd(chip.dataset.cat);
+  });
+
+  // ---------- Explore (TMDB discover) ----------
+  const EX_BACKDROP = 'https://image.tmdb.org/t/p/w780';
+  const EX_TTL = 30 * 60 * 1000;
+  const EX_ROWS = {
+    tv: [
+      {t:'Trending this week', p:'trending/tv/week'}, {t:'Popular', p:'tv/popular'}, {t:'Top rated', p:'tv/top_rated'}, {t:'On the air', p:'tv/on_the_air'},
+      {t:'Crime', p:'discover/tv', q:'with_genres=80&sort_by=popularity.desc'}, {t:'Sci-Fi & Fantasy', p:'discover/tv', q:'with_genres=10765&sort_by=popularity.desc'},
+      {t:'Drama', p:'discover/tv', q:'with_genres=18&sort_by=popularity.desc'}, {t:'Comedy', p:'discover/tv', q:'with_genres=35&sort_by=popularity.desc'},
+      {t:'Action & Adventure', p:'discover/tv', q:'with_genres=10759&sort_by=popularity.desc'}, {t:'Mystery', p:'discover/tv', q:'with_genres=9648&sort_by=popularity.desc'},
+      {t:'Animation', p:'discover/tv', q:'with_genres=16&sort_by=popularity.desc'}
+    ],
+    movie: [
+      {t:'Trending this week', p:'trending/movie/week'}, {t:'Popular', p:'movie/popular'}, {t:'Top rated', p:'movie/top_rated'}, {t:'Now playing', p:'movie/now_playing'}, {t:'Coming soon', p:'movie/upcoming'},
+      {t:'Action', p:'discover/movie', q:'with_genres=28&sort_by=popularity.desc'}, {t:'Thriller', p:'discover/movie', q:'with_genres=53&sort_by=popularity.desc'},
+      {t:'Sci-Fi', p:'discover/movie', q:'with_genres=878&sort_by=popularity.desc'}, {t:'Crime', p:'discover/movie', q:'with_genres=80&sort_by=popularity.desc'},
+      {t:'Drama', p:'discover/movie', q:'with_genres=18&sort_by=popularity.desc'}, {t:'Comedy', p:'discover/movie', q:'with_genres=35&sort_by=popularity.desc'},
+      {t:'Horror', p:'discover/movie', q:'with_genres=27&sort_by=popularity.desc'}, {t:'Animation', p:'discover/movie', q:'with_genres=16&sort_by=popularity.desc'}
+    ]
+  };
+  let exType = 'tv', exSig = '', exToken = 0, exCurrent = null;
+  const exCache = {}, exMap = {};
+
+  async function exFetch(row){
+    const key = activeLibrary + '|' + row.p + '|' + (row.q || '');
+    const hit = exCache[key];
+    if(hit && Date.now() - hit.t < EX_TTL) return hit.d;
+    try{
+      const r = await fetch(`${TMDB_BASE}/${row.p}?api_key=${TMDB_KEY}${row.q ? '&' + row.q : ''}${tmdbLangParam()}`);
+      if(!r.ok) return null;
+      const j = await r.json();
+      const d = (j.results || []).filter(x => x.poster_path);
+      exCache[key] = {t: Date.now(), d};
+      return d;
+    }catch(e){ return null; }
+  }
+  function exYear(r){ const d = r.release_date || r.first_air_date || ''; return d ? parseInt(d.slice(0, 4), 10) : new Date().getFullYear(); }
+  function exTitle(r){ return r.title || r.name || ''; }
+  function exFindItem(r, type){
+    const title = exTitle(r).toLowerCase(), year = exYear(r);
+    return state.items.find(i => i.type === type && ((i.tmdbId && i.tmdbId === r.id) || (i.title.toLowerCase() === title && i.year === year)));
+  }
+  function exMarkInLibrary(){
+    document.querySelectorAll('#exploreDiscover .ex-card, #exploreDiscover .ex-slide').forEach(el => {
+      if(el.classList.contains('sk')) return;
+      const r = exMap[exType + ':' + el.dataset.id];
+      if(r) el.classList.toggle('in-lib', !!exFindItem(r, exType));
+    });
+  }
+  function exCardHtml(x){
+    exMap[exType + ':' + x.id] = x;
+    return '<div class="ex-card" data-id="' + x.id + '"><img src="' + IMG_BASE + x.poster_path + '" alt="" loading="lazy" draggable="false"><span class="ex-in">&#10003;</span></div>';
+  }
+  function renderExplore(force){
+    const host = shEl('exploreDiscover');
+    const sig = activeLibrary + '|' + exType;
+    if(!force && exSig === sig && host.childElementCount){ exMarkInLibrary(); return; }
+    exSig = sig;
+    const token = ++exToken;
+    const rows = EX_ROWS[exType];
+    host.innerHTML = '<div class="ex-hero" id="exHero"><div class="ex-slide sk"></div></div>';
+    const secs = rows.map(row => {
+      const sec = document.createElement('section');
+      sec.className = 'ex-sec';
+      sec.innerHTML = '<div class="ex-h">' + escapeHtml(row.t) + '</div><div class="ex-scroll">' + '<div class="ex-card sk"></div>'.repeat(8) + '</div>';
+      host.appendChild(sec);
+      return sec;
+    });
+    let ok = 0, left = rows.length;
+    rows.forEach((row, idx) => {
+      exFetch(row).then(d => {
+        if(token !== exToken) return;
+        left--;
+        if(!d || !d.length){ secs[idx].remove(); if(idx === 0) shEl('exHero') && shEl('exHero').remove(); }
+        else {
+          ok++;
+          secs[idx].querySelector('.ex-scroll').innerHTML = d.map(exCardHtml).join('');
+          if(idx === 0){
+            const hero = shEl('exHero');
+            const slides = d.filter(x => x.backdrop_path).slice(0, 6);
+            if(hero && slides.length){
+              hero.innerHTML = slides.map(x => {
+                exMap[exType + ':' + x.id] = x;
+                const rating = x.vote_average ? ' · ★ ' + x.vote_average.toFixed(1) : '';
+                return '<div class="ex-slide" data-id="' + x.id + '" style="background-image:url(' + EX_BACKDROP + x.backdrop_path + ')"><span class="ex-pill"></span><div class="ex-slide-in"><div class="t">' + escapeHtml(exTitle(x)) + '</div><div class="m">' + exYear(x) + rating + '</div></div></div>';
+              }).join('');
+            } else if(hero){ hero.remove(); }
+          }
+          exMarkInLibrary();
+        }
+        if(left === 0 && ok === 0) host.innerHTML = '<div class="ex-fail" id="exRetry">Couldn&rsquo;t load suggestions.<br>Check your connection and tap here to try again.</div>';
+      });
+    });
+  }
+  function exOpen(r, type){
+    exCurrent = {r, type};
+    const cats = state.categories[type] || [];
+    const inLib = exFindItem(r, type);
+    const lbl = inLib ? ((cats.find(c => c.key === inLib.category) || {}).label || inLib.category) : '';
+    const poster = r.poster_path ? '<img src="' + IMG_BASE + r.poster_path + '" alt="">' : '<div class="nop"></div>';
+    const rating = r.vote_average ? ' · ★ ' + r.vote_average.toFixed(1) : '';
+    shOpenSheet('<div class="sh-top">' + poster + '<div><div class="sh-title">' + escapeHtml(exTitle(r)) + '</div><div class="sh-meta">' + (type === 'tv' ? 'TV show' : 'Movie') + ' · ' + exYear(r) + rating + '</div><div class="sh-over">' + escapeHtml(r.overview || 'No description available.') + '</div></div></div>' +
+      (inLib ? '<div class="sh-note">Already in your lists &mdash; ' + escapeHtml(lbl) + '</div>'
+             : '<div class="sh-lbl">Add to</div><div class="sh-chips">' + cats.map(c => '<button type="button" class="sh-chip" data-cat="' + c.key + '">' + escapeHtml(c.label) + '</button>').join('') + '</div>'));
+  }
+  function exAdd(catKey){
+    if(!exCurrent) return;
+    const {r, type} = exCurrent;
+    addItem({title: exTitle(r), year: exYear(r), type, tmdbId: r.id, posterPath: r.poster_path || null, category: catKey});
+    shCloseSheet();
+    exMarkInLibrary();
+  }
+  shEl('exploreDiscover').addEventListener('click', e => {
+    if(e.target.closest('#exRetry')){ renderExplore(true); return; }
+    const el = e.target.closest('.ex-card, .ex-slide');
+    if(!el || el.classList.contains('sk')) return;
+    const r = exMap[exType + ':' + el.dataset.id];
+    if(r) exOpen(r, exType);
+  });
+  shEl('exSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if(!b) return;
+    exType = b.dataset.t;
+    shEl('exSeg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+    renderExplore();
+  });
+  // hide the discover rows while search results are showing
+  new MutationObserver(() => shEl('viewExplore').classList.toggle('searching', shEl('searchResults').classList.contains('open')))
+    .observe(shEl('searchResults'), {attributes: true, attributeFilter: ['class']});
+
+  // keep Profile / Upcoming fresh whenever the app updates its stats (after add, move, delete, library switch…)
+  const shOrigRenderStats = renderStats;
+  renderStats = function(){
+    shOrigRenderStats();
+    const s = document.body.dataset.screen;
+    if(s === 'profile') renderProfile();
+    if(s === 'upcoming') renderUpcoming();
+    if(s === 'explore') exMarkInLibrary();
+    shUpdateEmpty();
+  };
+  setScreen('shows', 'watch');
 
   init();
 })();
