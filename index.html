@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>try{ if(localStorage.getItem('archive-gate-off') === '1') document.documentElement.classList.add('no-gate'); }catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Archive</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -1175,6 +1176,24 @@
   .st-mini{ display:grid; grid-template-columns:repeat(3,1fr); margin-top:14px; padding-top:12px; border-top:1px solid #dedede; text-align:center; }
   .st-mini b{ display:block; font:700 22px var(--font-display); } .st-mini span{ font:400 13px var(--font-body); color:#666; }
 
+
+  /* --- Back button --- */
+  .back-btn{ position:fixed; z-index:70; top:calc(env(safe-area-inset-top, 0px) + 9px); left:10px; width:40px; height:40px; border-radius:50%; border:0; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.2); display:none; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .back-btn svg{ width:22px; height:22px; stroke:#000; fill:none; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+  .back-btn:active{ transform:scale(.92); }
+  body.has-back .back-btn{ display:flex; }
+  body.has-back[data-screen="watch"] .app-top, body.has-back[data-screen="upcoming"] .app-top{ padding-left:56px; }
+  body.has-back[data-screen="watch"] .back-btn, body.has-back[data-screen="upcoming"] .back-btn{ background:#f0f0f0; box-shadow:none; }
+  body.has-back #viewExplore{ padding-top:64px; }
+  @media (min-width:900px){
+    .back-btn{ display:flex; left:28px; top:16px; background:#f0f0f0; box-shadow:none; opacity:.3; pointer-events:none; }
+    body.has-back .back-btn{ opacity:1; pointer-events:auto; }
+    .back-btn:hover{ background:#e4e4e4; }
+    body .bottom-nav{ padding-top:76px; }
+    body.has-back[data-screen="watch"] .app-top, body.has-back[data-screen="upcoming"] .app-top{ padding-left:0; }
+    body.has-back #viewExplore{ padding-top:14px; }
+  }
+
   /* --- readability fixes for the older popups on the light theme --- */
   .flip-face .num, .detail-rating, .branding-section-title, .cat-section-title, .util-btn.has-actions{ color:#000; }
   .surprise-action.primary, .branding-save-btn, .cat-add-btn{ background:var(--gold); border-color:var(--gold); color:#000; }
@@ -1193,6 +1212,53 @@
     #viewProfile{ max-width:860px; } #viewUpcoming{ max-width:860px; } #viewExplore{ max-width:760px; }
     #viewProfile header.marquee{ border-radius:0 0 18px 18px; }
   }
+
+  /* =================== text sizes (smaller, closer to TV Time) =================== */
+  .top-tab{ font-size:16px; padding:15px 8px 11px; }
+  .nav-btn{ font-size:12px; } .nav-btn svg{ width:26px; height:26px; }
+  .filter-pill{ font-size:13px; padding:9px 14px; }
+  .cat-section-header{ font-size:18px; }
+  .p-head{ font-size:22px; margin-bottom:10px; } .p-heart{ width:28px; height:28px; } .p-heart svg{ width:16px; height:16px; } .p-count{ font-size:14px; }
+  .p-head .chev svg{ width:22px; height:22px; }
+  .st-t{ font-size:12px; } .st-big{ font-size:32px; } .st-big small{ font-size:14px; } .st-sub{ font-size:13px; } .st-mini b{ font-size:18px; } .st-mini span{ font-size:12px; }
+  #viewProfile .marquee-title{ font-size:28px; } #viewProfile .marquee-sub{ font-size:13px; }
+  .ex-h{ font-size:19px; } .ex-slide-in .t{ font-size:20px; } .ex-seg button{ font-size:13px; padding:9px 18px; } .ex-surprise{ font-size:13px; }
+  #viewExplore .ticket-window input{ font-size:17px; }
+  .up-group-h{ font-size:16px; } .up-meta .t{ font-size:16px; }
+  .sh-title{ font-size:20px; }
+  .empty-state .big{ font-size:22px; } .es-sub{ font-size:16px; } .yellow-btn{ font-size:15px; }
+  .add-cat{ font-size:14px; } .outline-btn{ font-size:13px; } #profileTools .util-btn{ font-size:15px; }
+
+  /* =================== screen entry animation =================== */
+  .sh-anim{ animation:sh-rise .45s cubic-bezier(.2,.7,.2,1) both; animation-delay:var(--d,0ms); }
+  @keyframes sh-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
+  @media (prefers-reduced-motion: reduce){ .sh-anim{ animation:none; } }
+
+  /* =================== Profile reorder mode =================== */
+  .add-row{ display:flex; gap:10px; margin:18px 16px 0; }
+  .add-row .add-cat{ flex:1; width:auto; margin:0; }
+  .p-handle{ display:none; width:34px; height:34px; border:0; background:none; padding:0; align-items:center; justify-content:center; cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; flex:none; margin-left:auto; }
+  .p-handle svg{ width:22px; height:22px; stroke:#444; fill:none; stroke-width:2.4; stroke-linecap:round; }
+  .reorder-hint{ margin:16px 16px 0; font:500 14px var(--font-body); color:#666; }
+  body.sh-reorder #profileBody > .p-sec:not([data-row]){ display:none; }
+  body.sh-reorder .add-cat[data-pick]{ display:none; }
+  body.sh-reorder .p-rowscroll, body.sh-reorder .p-sec[data-row] > .p-card{ display:none; }
+  body.sh-reorder .p-sec[data-row]{ padding:5px 16px; }
+  body.sh-reorder .p-sec[data-row] .p-head{ background:#f4f4f4; border-radius:14px; padding:12px 8px 12px 16px; margin:0; font-size:17px; cursor:default; }
+  body.sh-reorder .p-sec[data-row] .chev, body.sh-reorder .p-sec[data-row] .p-unpin{ display:none; }
+  body.sh-reorder .p-handle{ display:flex; }
+  body.sh-reorder #profileTools{ display:none; }
+  body.sh-reorder .add-cat[data-reorder]{ background:var(--gold); border:0; border-radius:999px; }
+  .p-sec.dragging{ position:relative; z-index:8; transition:none; }
+  .p-sec.dragging .p-head{ background:#fff7c2; box-shadow:0 8px 20px -8px rgba(0,0,0,.35); }
+  .p-sec[data-row]{ touch-action:pan-y; }
+
+  /* =================== on/off switch row =================== */
+  .tool-switch{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .sw{ width:46px; height:28px; border-radius:999px; background:#cfcfcf; position:relative; transition:background .2s; flex:none; }
+  .sw::after{ content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.3); transition:transform .2s; }
+  .sw.on{ background:var(--gold); } .sw.on::after{ transform:translateX(18px); }
+  html.no-gate .machine-gate{ display:none !important; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 </head>
@@ -1360,6 +1426,7 @@
 </section>
 <section class="view" id="viewUpcoming"></section>
 <section class="view" id="viewProfile"><div id="profileBody"></div><div id="profileTools"></div></section>
+<button type="button" class="back-btn" id="backBtn" aria-label="Back" title="Back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
 <nav class="bottom-nav" id="bottomNav" aria-label="Main">
   <button type="button" class="nav-btn active" data-view="shows"><svg viewBox="0 0 28 28"><rect x="3.5" y="8.5" width="21" height="14" rx="2.5"/><path d="M9.5 3.5 14 8.5l4.5-5"/></svg><span>Shows</span></button>
   <button type="button" class="nav-btn" data-view="movies"><svg viewBox="0 0 28 28"><rect x="3.5" y="11.5" width="21" height="12" rx="2"/><path d="M3.5 11.5l1.4-5.2 20.1-1.2.9 6.4M9 6.1l2.6 4.9M15 5.4l2.6 4.9M20.8 4.6l2.4 4.6"/></svg><span>Movies</span></button>
@@ -4080,6 +4147,7 @@ const itemsDocRef = doc(db, "tracker", "items");
   function initGate(){
     let skip = false;
     try{ skip = sessionStorage.getItem(MACHINE_SESSION_FLAG) === '1'; }catch(e){}
+    try{ if(localStorage.getItem('archive-gate-off') === '1') skip = true; }catch(e){}
     if(skip){
       gate.style.display = 'none';
       fab.style.display = 'flex';
@@ -4190,6 +4258,20 @@ const itemsDocRef = doc(db, "tracker", "items");
     feedBtn.type = 'button'; feedBtn.className = 'util-btn'; feedBtn.style.cssText = 'width:100%;';
     feedBtn.innerHTML = '&#128065; Activity feed';
     feedBtn.addEventListener('click', () => shEl('machineFab').click());
+    // Samaritan login screen on/off (remembered on this device)
+    const gateRow = document.createElement('button');
+    gateRow.type = 'button'; gateRow.className = 'util-btn tool-switch'; gateRow.style.cssText = 'width:100%; margin-bottom:8px;';
+    let gateOn = true;
+    try{ gateOn = localStorage.getItem('archive-gate-off') !== '1'; }catch(e){}
+    gateRow.innerHTML = '<span>&#128274; Samaritan login screen</span><span class="sw' + (gateOn ? ' on' : '') + '" id="gateSw"></span>';
+    gateRow.addEventListener('click', () => {
+      gateOn = !gateOn;
+      try{ if(gateOn) localStorage.removeItem('archive-gate-off'); else localStorage.setItem('archive-gate-off', '1'); }catch(e){}
+      document.documentElement.classList.toggle('no-gate', !gateOn);
+      shEl('gateSw').classList.toggle('on', gateOn);
+      showToast(gateOn ? 'Samaritan login is ON — it shows next time you open the app' : 'Samaritan login is OFF — the app opens straight to your library');
+    });
+    shEl('profileTools').appendChild(gateRow);
     shEl('profileTools').appendChild(feedBtn);
     // add-search lives in Explore
     shEl('exploreSearchSlot').appendChild(document.querySelector('.ticket-window'));
@@ -4206,31 +4288,87 @@ const itemsDocRef = doc(db, "tracker", "items");
     shEl('esBtn').textContent = mv ? 'Browse all movies' : 'Browse all shows';
   }
 
-  function setScreen(view, sub){
+  // ---- navigation history: powers the Back button, the phone's back gesture and the browser Back button ----
+  let shIdx = 0, shCur = {view: 'shows', sub: 'watch', filter: 'all'};
+  function shSyncBack(){ document.body.classList.toggle('has-back', shIdx > 0); }
+  function shCloseOverlays(){
+    shCloseSheet();
+    ['surpriseModal', 'statsModal', 'detailModal', 'brandingModal', 'catModal'].forEach(id => {
+      const el = shEl(id);
+      if(el && el.style.display === 'flex') el.style.display = 'none';
+    });
+  }
+  function setScreen(view, sub, opts){
+    opts = opts || {};
     shView = view;
     if(sub) shSub = sub;
     if(view === 'movies') shSub = 'watch';
     const screen = view === 'explore' ? 'explore' : view === 'profile' ? 'profile' : (view === 'shows' && shSub === 'upcoming' ? 'upcoming' : 'watch');
     document.body.dataset.view = view;
     document.body.dataset.screen = screen;
+    let animated = false;
+    if(screen !== 'profile') document.body.classList.remove('sh-reorder');
     document.querySelectorAll('#bottomNav .nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
     document.querySelectorAll('#appTop .top-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === (screen === 'upcoming' ? 'upcoming' : 'watch')));
     if(view === 'shows' || view === 'movies'){
       const t = view === 'shows' ? 'tv' : 'movie';
-      if(state.activeType !== t) document.querySelector('.type-tab[data-type="' + t + '"]').click();
+      if(state.activeType !== t){ document.querySelector('.type-tab[data-type="' + t + '"]').click(); animated = true; }
+      if(opts.filter !== undefined){
+        state.activeFilter = opts.filter || 'all';
+        renderFilters();
+        navTransition(renderGrid);
+        animated = true;
+      }
       shUpdateEmpty();
     }
     if(screen === 'profile') renderProfile();
     if(screen === 'explore') renderExplore();
     if(screen === 'upcoming'){ renderUpcoming(); scheduleStatusBackfill(); }
     window.scrollTo(0, 0);
+    if(screen === 'watch' && !animated) playGridIn();
+    shPlayIn(screen);
+    // remember this screen so Back can return to it
+    const filter = (view === 'shows' || view === 'movies') ? (state.activeFilter || 'all') : 'all';
+    const changed = shCur.view !== view || shCur.sub !== shSub || shCur.filter !== filter;
+    shCur = {view, sub: shSub, filter};
+    if(opts.noPush){ return; }
+    if(changed){
+      shIdx++;
+      try{ history.pushState({sh: 1, idx: shIdx, view, sub: shSub, filter}, ''); }catch(e){}
+      shSyncBack();
+    }
   }
-  function openList(view, filter){
-    setScreen(view, 'watch');
-    state.activeFilter = filter || 'all';
-    renderFilters();
-    navTransition(renderGrid);
+  function shPlayIn(screen){
+    if(reduceMotion) return;
+    const sel = {
+      profile: '#viewProfile > header.marquee, #viewProfile .p-sec, #viewProfile .add-row, #profileTools',
+      explore: '#viewExplore #exploreSearchSlot, #viewExplore .ex-toolbar, #viewExplore .ex-hero, #viewExplore .ex-sec',
+      upcoming: '#viewUpcoming .up-group-h, #viewUpcoming .up-row, #viewUpcoming .up-empty'
+    }[screen];
+    if(!sel) return;
+    const els = [...document.querySelectorAll(sel)];
+    els.forEach((el, i) => { el.style.setProperty('--d', Math.min(i, 10) * 45 + 'ms'); el.classList.remove('sh-anim'); void el.offsetWidth; el.classList.add('sh-anim'); });
+    setTimeout(() => els.forEach(el => el.classList.remove('sh-anim')), 1100);
   }
+  function openList(view, filter){ setScreen(view, 'watch', {filter: filter || 'all'}); }
+  shEl('backBtn').addEventListener('click', () => {
+    shCloseOverlays();
+    if(shIdx > 0) history.back();
+  });
+  let shSkipPop = false;
+  function shOverlayOpen(){
+    return shSheet.classList.contains('open') || ['surpriseModal', 'statsModal', 'detailModal', 'brandingModal', 'catModal'].some(id => { const el = shEl(id); return el && el.style.display === 'flex'; });
+  }
+  window.addEventListener('popstate', e => {
+    if(shSkipPop){ shSkipPop = false; return; }
+    // with a popup open, Back only closes the popup and stays on the same screen
+    if(shOverlayOpen()){ shCloseOverlays(); shSkipPop = true; history.go(1); return; }
+    const st = e.state;
+    if(!st || st.sh !== 1) return;
+    shIdx = st.idx;
+    setScreen(st.view, st.sub, {noPush: true, filter: st.filter});
+    shSyncBack();
+  });
   shEl('bottomNav').addEventListener('click', e => {
     const b = e.target.closest('.nav-btn'); if(!b) return;
     if(b.dataset.view === shView){
@@ -4250,13 +4388,13 @@ const itemsDocRef = doc(db, "tracker", "items");
     const inner = i.posterPath ? '<img src="' + IMG_BASE + i.posterPath + '" alt="" loading="lazy" draggable="false">' : '<div class="fallback">' + escapeHtml(i.title) + '</div>';
     return '<div class="mini" data-id="' + i.id + '"><div class="poster-art">' + inner + '</div></div>';
   }
-  function shRow(title, items, go, filter, heart, unpin){
+  function shRow(title, items, go, filter, heart, unpin, rowId){
     const body = items.length
       ? '<div class="p-rowscroll">' + items.slice(0, 16).map(shMini).join('') + '</div>'
       : '<div class="p-card"><div class="p-empty">Nothing here yet</div></div>';
-    return '<div class="p-sec"><div class="p-head" data-go="' + go + '" data-filter="' + (filter || 'all') + '">' + (heart ? SH_HEART : '') + '<span>' + title + '</span><span class="p-count">' + items.length + '</span>' +
+    return '<div class="p-sec" data-row="' + rowId + '"><div class="p-head" data-go="' + go + '" data-filter="' + (filter || 'all') + '">' + (heart ? SH_HEART : '') + '<span>' + title + '</span><span class="p-count">' + items.length + '</span>' +
       (unpin ? '<button type="button" class="p-unpin" data-unpin="' + unpin + '" title="Remove from Profile" aria-label="Remove from Profile">&times;</button>' : '') +
-      '<span class="chev">' + SH_CHEV + '</span></div>' + body + '</div>';
+      '<button type="button" class="p-handle" aria-label="Drag to reorder"><svg viewBox="0 0 24 24"><path d="M5 9h14M5 15h14"/></svg></button><span class="chev">' + SH_CHEV + '</span></div>' + body + '</div>';
   }
   const shStatsDone = {};
   function shStatsNeeded(){
@@ -4282,11 +4420,23 @@ const itemsDocRef = doc(db, "tracker", "items");
     pinned.sort((a, b) => a.c.pinned - b.c.pinned);
     const labelCount = {};
     ['tv', 'movie'].forEach(t => (state.categories[t] || []).forEach(c => { const k = c.label.toLowerCase(); labelCount[k] = (labelCount[k] || 0) + 1; }));
-    const pinnedRows = pinned.map(({t, c}) => {
+    const rowDefs = {}, baseIds = [];
+    pinned.forEach(({t, c}) => {
       const dup = labelCount[c.label.toLowerCase()] > 1;
       const title = escapeHtml(c.label) + (dup ? ' <span class="p-count" style="margin-left:0">· ' + (t === 'tv' ? 'Shows' : 'Movies') + '</span>' : '');
-      return shRow(title, all.filter(i => i.type === t && i.category === c.key), t === 'tv' ? 'shows' : 'movies', c.key, false, t + '|' + c.key);
-    }).join('');
+      const id = 'cat:' + t + '|' + c.key;
+      rowDefs[id] = () => shRow(title, all.filter(i => i.type === t && i.category === c.key), t === 'tv' ? 'shows' : 'movies', c.key, false, t + '|' + c.key, id);
+      baseIds.push(id);
+    });
+    [['tv_all', 'Shows', tv, 'shows', 'all', false], ['tv_fav', 'Favorite shows', tv.filter(i => i.category === 'favourite'), 'shows', 'favourite', true],
+     ['mv_all', 'Movies', mv, 'movies', 'all', false], ['mv_fav', 'Favorite movies', mv.filter(i => i.category === 'favourite'), 'movies', 'favourite', true]]
+      .forEach(d => { rowDefs[d[0]] = () => shRow(d[1], d[2], d[3], d[4], d[5], null, d[0]); baseIds.push(d[0]); });
+    // order: the user's saved order; newly added categories go to the top, anything unknown at the end
+    const saved = (state.filterOrder && state.filterOrder.profile) || [];
+    const known = saved.filter(id => rowDefs[id]);
+    const missing = baseIds.filter(id => !known.includes(id));
+    const order = missing.filter(id => id.indexOf('cat:') === 0).concat(known, missing.filter(id => id.indexOf('cat:') !== 0));
+    const reorder = document.body.classList.contains('sh-reorder');
     const wm = watchedMovies(), ws = watchedShows();
     const movMin = wm.reduce((x, i) => x + (i.runtimeMin || 0), 0);
     const tvMin = ws.reduce((x, i) => x + effectiveEpisodeCount(i) * (i.epRuntimeMin || 0), 0);
@@ -4306,12 +4456,9 @@ const itemsDocRef = doc(db, "tracker", "items");
           stBox(mvIcon, 'Movies', movMin, loading ? 'Crunching your numbers…' : days(movMin) + ' days of movies', [mv.length, 'movies'], [wm.length, 'watched'], [mv.filter(i => i.category === 'favourite').length, 'favourites']) +
         '</div>' +
         '<button type="button" class="outline-btn" data-stats="1">Full stats</button></div>' +
-      '<button type="button" class="add-cat" data-pick="1">+ Add category</button>' +
-      pinnedRows +
-      shRow('Shows', tv, 'shows', 'all', false) +
-      shRow('Favorite shows', tv.filter(i => i.category === 'favourite'), 'shows', 'favourite', true) +
-      shRow('Movies', mv, 'movies', 'all', false) +
-      shRow('Favorite movies', mv.filter(i => i.category === 'favourite'), 'movies', 'favourite', true);
+      (reorder ? '<div class="reorder-hint">Drag the &#9776; handle to move a row up or down, then tap Done.</div>' : '') +
+      '<div class="add-row"><button type="button" class="add-cat" data-pick="1">+ Add category</button><button type="button" class="add-cat" data-reorder="1">' + (reorder ? 'Done' : 'Reorder rows') + '</button></div>' +
+      order.map(id => rowDefs[id]()).join('');
     if(shStatsNeeded()) shLoadStatsOnce(); else shStatsDone[activeLibrary] = true;
     host.querySelectorAll('.mini').forEach(el => {
       const it = all.find(x => x.id === el.dataset.id);
@@ -4319,6 +4466,8 @@ const itemsDocRef = doc(db, "tracker", "items");
     });
   }
   shEl('profileBody').addEventListener('click', e => {
+    if(e.target.closest('[data-reorder]')){ document.body.classList.toggle('sh-reorder'); renderProfile(); window.scrollTo(0, 0); return; }
+    if(document.body.classList.contains('sh-reorder')) return;   // no navigation while reordering
     const mini = e.target.closest('.mini');
     if(mini){ openDetail(mini.dataset.id); return; }
     const un = e.target.closest('[data-unpin]');
@@ -4328,6 +4477,46 @@ const itemsDocRef = doc(db, "tracker", "items");
     const go = e.target.closest('[data-go]');
     if(go) openList(go.dataset.go, go.dataset.filter);
   });
+
+
+  // ---- drag rows up/down on Profile (works with finger or mouse) ----
+  let shDrag = null;
+  function shDragMove(y){
+    const d = shDrag; if(!d) return;
+    d.sec.style.transform = 'translateY(' + (y - d.startY) + 'px)';
+    const secs = [...shEl('profileBody').querySelectorAll('.p-sec[data-row]')];
+    const i = secs.indexOf(d.sec), r = d.sec.getBoundingClientRect(), mid = r.top + r.height / 2;
+    const prev = secs[i - 1], next = secs[i + 1];
+    let moved = false;
+    if(next){ const nr = next.getBoundingClientRect(); if(mid > nr.top + nr.height / 2){ next.after(d.sec); moved = true; } }
+    if(!moved && prev){ const pr = prev.getBoundingClientRect(); if(mid < pr.top + pr.height / 2){ prev.before(d.sec); moved = true; } }
+    if(moved){
+      d.sec.style.transform = '';
+      const t = r.top - d.sec.getBoundingClientRect().top;
+      d.sec.style.transform = 'translateY(' + t + 'px)';
+      d.startY = y - t;
+    }
+  }
+  shEl('profileBody').addEventListener('pointerdown', e => {
+    const h = e.target.closest('.p-handle');
+    if(!h || !document.body.classList.contains('sh-reorder')) return;
+    e.preventDefault();
+    const sec = h.closest('.p-sec[data-row]');
+    shDrag = {sec, startY: e.clientY, pid: e.pointerId};
+    sec.classList.add('dragging');
+    try{ h.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  shEl('profileBody').addEventListener('pointermove', e => { if(shDrag && e.pointerId === shDrag.pid) shDragMove(e.clientY); });
+  function shDragEnd(e){
+    if(!shDrag || e.pointerId !== shDrag.pid) return;
+    const sec = shDrag.sec;
+    sec.style.transform = ''; sec.classList.remove('dragging'); shDrag = null;
+    if(!state.filterOrder) state.filterOrder = {movie: [], tv: []};
+    state.filterOrder.profile = [...shEl('profileBody').querySelectorAll('.p-sec[data-row]')].map(x => x.dataset.row);
+    persist();
+  }
+  shEl('profileBody').addEventListener('pointerup', shDragEnd);
+  shEl('profileBody').addEventListener('pointercancel', shDragEnd);
 
   // ---------- Upcoming episodes ----------
   function shDayDiff(dateStr){
@@ -4540,7 +4729,9 @@ const itemsDocRef = doc(db, "tracker", "items");
     if(s === 'explore') exMarkInLibrary();
     shUpdateEmpty();
   };
-  setScreen('shows', 'watch');
+  setScreen('shows', 'watch', {noPush: true});
+  try{ history.replaceState({sh: 1, idx: 0, view: 'shows', sub: 'watch', filter: 'all'}, ''); }catch(e){}
+  shSyncBack();
 
   init();
 })();

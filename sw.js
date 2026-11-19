@@ -1,5 +1,5 @@
 // The Archive — service worker. Bump CACHE_VERSION whenever you want to force a fresh app shell.
-const CACHE_VERSION = 'archive-v6';
+const CACHE_VERSION = 'archive-v8';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 const IMG_CACHE = 'archive-images-v1';
 const IMG_MAX = 400;
