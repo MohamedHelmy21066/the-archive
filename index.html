@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<script>try{ if(localStorage.getItem('archive-gate-off') === '1') document.documentElement.classList.add('no-gate'); }catch(e){}</script>
+<script>try{var gp=function(v){var m=/^([01])(?::(\d+))?$/.exec(v||'');return m?{o:m[1]==='1',t:+(m[2]||0)}:null;};var ga=gp(localStorage.getItem('archive-gate-off'));var gc=document.cookie.match(/(?:^|; )archive_gate_off=([^;]*)/);var gb=gc?gp(decodeURIComponent(gc[1])):null;var gn=(ga&&gb)?(gb.t>ga.t?gb:ga):(ga||gb);if(gn&&gn.o)document.documentElement.classList.add('no-gate');}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>The Archive</title>
 <link rel="manifest" href="manifest.webmanifest">
@@ -1182,16 +1182,18 @@
   .back-btn svg{ width:22px; height:22px; stroke:#000; fill:none; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
   .back-btn:active{ transform:scale(.92); }
   body.has-back .back-btn{ display:flex; }
-  body.has-back[data-screen="watch"] .app-top, body.has-back[data-screen="upcoming"] .app-top{ padding-left:56px; }
-  body.has-back[data-screen="watch"] .back-btn, body.has-back[data-screen="upcoming"] .back-btn{ background:#f0f0f0; box-shadow:none; }
-  body.has-back #viewExplore{ padding-top:64px; }
+  body.has-back[data-screen="watch"] .back-btn, body.has-back[data-screen="upcoming"] .back-btn{ background:#f0f0f0; box-shadow:none; width:32px; height:32px; left:6px; top:calc(env(safe-area-inset-top, 0px) + 8px); }
+  body.has-back[data-screen="watch"] .back-btn svg, body.has-back[data-screen="upcoming"] .back-btn svg{ width:19px; height:19px; }
+  body.has-back[data-screen="explore"] .back-btn{ width:36px; height:36px; left:10px; top:calc(env(safe-area-inset-top, 0px) + 18px); }
   @media (min-width:900px){
     .back-btn{ display:flex; left:28px; top:16px; background:#f0f0f0; box-shadow:none; opacity:.3; pointer-events:none; }
     body.has-back .back-btn{ opacity:1; pointer-events:auto; }
     .back-btn:hover{ background:#e4e4e4; }
     body .bottom-nav{ padding-top:76px; }
-    body.has-back[data-screen="watch"] .app-top, body.has-back[data-screen="upcoming"] .app-top{ padding-left:0; }
-    body.has-back #viewExplore{ padding-top:14px; }
+    body.has-back[data-screen="watch"] .back-btn, body.has-back[data-screen="upcoming"] .back-btn,
+    body.has-back[data-screen="explore"] .back-btn{ width:40px; height:40px; left:28px; top:16px; background:#f0f0f0; box-shadow:none; }
+    body.has-back[data-screen="watch"] .back-btn svg, body.has-back[data-screen="upcoming"] .back-btn svg{ width:22px; height:22px; }
+    body.has-back[data-screen="explore"] #viewExplore .ticket-window{ padding-left:4px; }
   }
 
   /* --- readability fixes for the older popups on the light theme --- */
@@ -1229,10 +1231,13 @@
   .empty-state .big{ font-size:22px; } .es-sub{ font-size:16px; } .yellow-btn{ font-size:15px; }
   .add-cat{ font-size:14px; } .outline-btn{ font-size:13px; } #profileTools .util-btn{ font-size:15px; }
 
-  /* =================== screen entry animation =================== */
-  .sh-anim{ animation:sh-rise .45s cubic-bezier(.2,.7,.2,1) both; animation-delay:var(--d,0ms); }
-  @keyframes sh-rise{ from{ opacity:0; transform:translateY(14px); } to{ opacity:1; transform:none; } }
-  @media (prefers-reduced-motion: reduce){ .sh-anim{ animation:none; } }
+  /* =================== screen transitions (same motion as the poster grid) =================== */
+  .sh-leaving{ opacity:0; transform:translateY(8px); filter:blur(3px); transition:opacity .12s ease, transform .12s ease, filter .12s ease; pointer-events:none; }
+  .sh-card{ animation:nav-card .45s cubic-bezier(.2,.7,.2,1) both; animation-delay:var(--d,0ms); }
+  .sh-fade{ animation:sh-fade-up .4s ease both; animation-delay:var(--d,0ms); }
+  @keyframes sh-fade-up{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+  .p-rowscroll, .ex-scroll, .ex-hero{ overflow-y:hidden; padding-bottom:18px; margin-bottom:-12px; }
+  @media (prefers-reduced-motion: reduce){ .sh-card, .sh-fade{ animation:none; } .sh-leaving{ transition:none; } }
 
   /* =================== Profile reorder mode =================== */
   .add-row{ display:flex; gap:10px; margin:18px 16px 0; }
@@ -1259,6 +1264,91 @@
   .sw::after{ content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.3); transition:transform .2s; }
   .sw.on{ background:var(--gold); } .sw.on::after{ transform:translateX(18px); }
   html.no-gate .machine-gate{ display:none !important; }
+
+  /* =================== Back: phones use the system back swipe, browsers use their own Back arrow =================== */
+  @media (max-width:899px){ .back-btn, body.has-back .back-btn{ display:none !important; } }
+  @media (min-width:900px) and (display-mode: browser){
+    .back-btn, body.has-back .back-btn{ display:none !important; }
+    body .bottom-nav{ padding-top:22px; }
+  }
+
+  /* =================== Title page (banner, tabs, episodes) =================== */
+  #detailModal{ align-items:stretch; justify-content:center; padding:0; z-index:250; }
+  #detailModal .modal-close{ display:none; }
+  #detailModal .detail-modal-card{ width:100%; max-width:600px; height:100%; max-height:100%; border-radius:0; padding:0; overflow-y:auto; background:#fff; border:0; box-shadow:none; }
+  @media (min-width:700px){
+    #detailModal{ align-items:center; padding:20px; background:rgba(0,0,0,.55); }
+    #detailModal .detail-modal-card{ height:auto; max-height:92vh; border-radius:20px; }
+  }
+  .dt svg{ fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+  .dt-banner{ position:relative; min-height:190px; background:#1b2340 center/cover no-repeat; color:#fff; display:flex; align-items:flex-end; }
+  .dt-banner::before{ content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(0,0,0,.45) 0%,rgba(0,0,0,.05) 38%,rgba(0,0,0,.82) 100%); }
+  .dt-close, .dt-more{ position:absolute; top:calc(env(safe-area-inset-top, 0px) + 10px); z-index:3; width:40px; height:40px; border:0; background:rgba(0,0,0,.28); color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+  .dt-close{ left:10px; } .dt-more{ right:10px; }
+  .dt-close svg, .dt-more svg{ width:24px; height:24px; } .dt-more svg{ fill:#fff; stroke:none; }
+  .dt-menu{ display:none; position:absolute; right:10px; top:calc(env(safe-area-inset-top, 0px) + 56px); z-index:5; background:#fff; color:#000; border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:6px; min-width:180px; }
+  .dt-menu.open{ display:block; }
+  .dt-menu button{ display:block; width:100%; text-align:left; background:none; border:0; padding:12px 14px; font:600 15px var(--font-body); border-radius:10px; cursor:pointer; color:#000; }
+  .dt-menu button:hover{ background:#f1f1f1; }
+  .dt-head{ position:relative; z-index:2; padding:56px 16px 14px; width:100%; }
+  .dt-title{ font:700 26px var(--font-display); line-height:1.12; text-shadow:0 1px 10px rgba(0,0,0,.5); }
+  .dt-title span{ font-weight:500; opacity:.85; font-size:20px; }
+  .dt-logo{ display:block; max-width:68%; max-height:76px; object-fit:contain; object-position:left bottom; filter:drop-shadow(0 2px 8px rgba(0,0,0,.5)); }
+  .dt-meta{ font:500 14px var(--font-body); margin-top:6px; opacity:.92; text-shadow:0 1px 6px rgba(0,0,0,.5); }
+  .dt-info{ display:flex; align-items:center; gap:18px; padding:12px 16px; border-bottom:1px solid #e6e6e6; font:500 14px var(--font-body); color:#333; }
+  .dt-i{ display:inline-flex; align-items:center; gap:7px; } .dt-i svg{ width:18px; height:18px; color:#777; }
+  .dt-big{ margin-left:auto; }
+  .ep-check{ width:34px; height:34px; border-radius:50%; border:1.5px solid #cfcfcf; background:#fff; color:#bdbdbd; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex:none; transition:background .15s, border-color .15s, color .15s, transform .1s; }
+  .ep-check svg{ width:18px; height:18px; stroke-width:2.6; }
+  .ep-check:active{ transform:scale(.9); }
+  .ep-check.on{ background:var(--gold); border-color:var(--gold); color:#000; }
+  .ep-check.part{ border-color:var(--gold); color:#c9a400; }
+  .ep-check.busy{ opacity:.45; pointer-events:none; }
+  .dt-tabs{ display:flex; border-bottom:1px solid #e1e1e1; position:sticky; top:0; background:#fff; z-index:4; }
+  .dt-tabs button{ flex:1; background:none; border:0; border-bottom:3px solid transparent; margin-bottom:-1px; padding:14px 8px 11px; font:700 14px var(--font-display); letter-spacing:.06em; text-transform:uppercase; color:#8a8a8a; cursor:pointer; }
+  .dt-tabs button.on{ color:#000; border-bottom-color:#000; }
+  .dt-pane{ padding:4px 0 30px; min-height:240px; }
+  .dt-pane.grey{ background:#f4f4f4; }
+  .dt-sec{ padding:14px 16px; border-bottom:1px solid #eee; }
+  .dt-lbl{ font:700 17px var(--font-display); margin-bottom:8px; }
+  .dt-rating{ font:700 15px var(--font-body); margin-bottom:8px; } .dt-rating span{ font-weight:500; color:#888; font-size:13px; }
+  .dt-over{ font:400 15px/1.5 var(--font-body); color:#222; }
+  .dt-sec select{ width:100%; padding:13px 12px; border:1.5px solid #d6d6d6; border-radius:12px; font:600 15px var(--font-body); background:#fff; color:#000; }
+  .dt-links{ display:flex; flex-direction:column; gap:8px; }
+  .dt-links button{ text-align:left; background:#f4f4f4; border:0; border-radius:12px; padding:14px; font:600 15px var(--font-body); cursor:pointer; color:#000; }
+  .dt-trailer{ display:flex; align-items:center; gap:14px; padding:14px 16px; border-bottom:1px solid #eee; text-decoration:none; color:#000; }
+  .dt-tr-img{ position:relative; width:108px; height:62px; border-radius:8px; background:#222 center/cover; flex:none; display:block; }
+  .dt-play{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; }
+  .dt-play svg{ width:26px; height:26px; fill:#fff; stroke:none; filter:drop-shadow(0 1px 4px rgba(0,0,0,.6)); }
+  .dt-trailer b{ display:block; font:700 15px var(--font-body); } .dt-trailer small{ color:#777; font:400 13px var(--font-body); }
+  /* episodes */
+  .ep-h{ font:700 17px var(--font-display); padding:16px 16px 8px; }
+  .ep-loading{ text-align:center; color:#777; padding:40px 20px; font:400 15px var(--font-body); } .ep-loading.small{ padding:16px; }
+  .ep-season{ margin:0 12px 8px; background:#fff; border-radius:14px; overflow:hidden; }
+  .ep-s-head{ display:flex; align-items:center; gap:8px; padding:12px 12px 12px 16px; cursor:pointer; }
+  .ep-s-name{ font:700 18px var(--font-display); }
+  .ep-chev{ display:flex; color:#666; transition:transform .2s; } .ep-chev svg{ width:20px; height:20px; } .ep-chev.open{ transform:rotate(180deg); }
+  .ep-s-count{ margin-left:auto; font:500 14px var(--font-body); color:#777; }
+  .ep-list{ display:none; border-top:1px solid #eee; } .ep-list.open{ display:block; }
+  .ep-row{ display:flex; align-items:center; gap:12px; padding:10px 12px 10px 10px; border-bottom:1px solid #f0f0f0; }
+  .ep-row:last-child{ border-bottom:0; }
+  .ep-still{ width:84px; height:52px; flex:none; border-radius:6px; object-fit:cover; background:#e3e3e3; display:block; }
+  .ep-info{ min-width:0; flex:1; }
+  .ep-code{ font:700 16px var(--font-display); } .ep-title{ font:400 14px var(--font-body); color:#555; margin-top:1px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+  .ep-date{ font:400 12px var(--font-body); color:#999; margin-top:2px; }
+  .ep-row.unaired .ep-code, .ep-row.unaired .ep-title{ opacity:.55; }
+  .ep-row.next{ background:#fff; margin:0 12px; border-radius:14px; border-bottom:0; padding:10px 12px 10px 10px; }
+  .ep-caught{ margin:12px 12px 4px; background:#fff; border-radius:14px; padding:16px; text-align:center; } .ep-caught b{ display:block; font:700 17px var(--font-display); } .ep-caught span{ color:#777; font:400 14px var(--font-body); }
+  /* banner / logo picker */
+  .poster-picker-grid.art{ grid-template-columns:repeat(2,1fr); gap:10px; padding:0 14px 20px; }
+  .poster-picker-grid.art.logo{ grid-template-columns:repeat(3,1fr); }
+  .art-tile{ position:relative; border-radius:10px; overflow:hidden; background:#e8e8e8; cursor:pointer; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; border:2px solid transparent; }
+  .art-tile img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .poster-picker-grid.art.logo .art-tile{ aspect-ratio:3/2; background:#2a2f45; } .poster-picker-grid.art.logo .art-tile img{ object-fit:contain; padding:10px; }
+  .art-tile.reset{ background:#fff7c2; border:2px dashed #d9bd00; font:700 13px var(--font-display); text-align:center; color:#000; }
+  .poster-picker-grid.art.logo .art-tile.reset{ background:#fff7c2; color:#000; }
+  .art-tile.current{ border-color:var(--gold); }
+  .art-tile .current-tag{ position:absolute; left:6px; bottom:6px; background:var(--gold); color:#000; border-radius:999px; font:700 10px var(--font-display); padding:3px 8px; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 </head>
@@ -1770,9 +1860,12 @@ const itemsDocRef = doc(db, "tracker", "items");
     return Array.isArray(data.items) ? data : null;
   }
 
+  let gateCloudResolve = null;
+  const gateCloudP = new Promise(r => { gateCloudResolve = r; });
   async function loadItems(library = activeLibrary){
     try{
       const snap = await getDoc(itemsDocRef);
+      try{ if(gateCloudResolve) gateCloudResolve(snap.exists() ? snap.data() : null); }catch(e){}
       const libraryData = snap.exists() ? storedLibrary(snap.data(), library) : null;
       if(libraryData && Array.isArray(libraryData.items)){
         const items = libraryData.items;
@@ -2441,8 +2534,10 @@ const itemsDocRef = doc(db, "tracker", "items");
     clearTimeout(navTimer);
     navTimer = setTimeout(() => { if(token === navToken) grid.classList.remove('nav-in'); }, 1100);
   }
+  let shImmediate = false;
   function navTransition(update){
     if(reduceMotion){ update(); return; }
+    if(shImmediate){ update(); playGridIn(); return; }
     const token = ++navToken;
     grid.classList.remove('nav-in');
     grid.classList.add('nav-out');
@@ -2472,6 +2567,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     const ne = d.next_episode_to_air;
     item.nextEp = (ne && ne.air_date) ? {date: ne.air_date, s: ne.season_number, e: ne.episode_number, name: ne.name || ''} : null;
     item.nextEpAt = Date.now();
+    epMigrate(item, d);
     return true;
   }
   function statusBarColor(item){
@@ -2485,7 +2581,7 @@ const itemsDocRef = doc(db, "tracker", "items");
   }
   function needsShowStatus(item){
     if(item.type !== 'tv' || !item.tmdbId || item.category === 'stopped') return false;
-    if(!item.showStatus) return true;
+    if(!item.showStatus || item.epw === undefined) return true;
     return item.showStatus === 'ongoing' && (Date.now() - (item.nextEpAt || 0)) > 24 * 3600 * 1000;
   }
   function applyStatusBar(card, item){
@@ -2667,6 +2763,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     if(!item || item.category === newCat) return;
     pushUndo();
     item.category = newCat;
+    if(item.type === 'tv' && ['finished', 'favourite', 'up_to_date'].includes(newCat) && epTickedCount(item) === 0) epMarkAllAired(item);
     if(newCat !== 'favourite' && item.rank){
       // A rank badge only means something inside Favourites — clear it once
       // a title leaves, so it doesn't reappear with a stale rank later.
@@ -3177,7 +3274,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     return state.items.filter(i => i.type === 'movie' && (i.category === 'finished' || i.category === 'favourite'));
   }
   function watchedShows(){
-    return state.items.filter(i => i.type === 'tv' && (i.category === 'finished' || i.category === 'favourite' || i.category === 'up_to_date' || i.category === 'stopped'));
+    return state.items.filter(i => i.type === 'tv' && (i.category === 'finished' || i.category === 'favourite' || i.category === 'up_to_date' || i.category === 'stopped' || epTickedCount(i) > 0));
   }
 
   async function ensureStatsData(){
@@ -3247,6 +3344,7 @@ const itemsDocRef = doc(db, "tracker", "items");
   // How many episodes of a show actually count toward Stats — every episode,
   // unless the admin has excluded specific seasons via the season manager.
   function effectiveEpisodeCount(item){
+    if(item.epw){ return epTickedCount(item); }
     const seasons = realSeasons(item);
     if(seasons.length){
       const excluded = new Set(item.excludedSeasons || []);
@@ -3330,23 +3428,201 @@ const itemsDocRef = doc(db, "tracker", "items");
   const detailModal = document.getElementById('detailModal');
   const detailBody = document.getElementById('detailBody');
 
+  // ======================================================================
+  //  Title page: banner header, About / Episodes tabs, episode ticking
+  // ======================================================================
+  const DT_BACKDROP = 'https://image.tmdb.org/t/p/w780';
+  const DT_THUMB = 'https://image.tmdb.org/t/p/w300';
+  const DT_TTL = 10 * 60 * 1000;
+  const DT_WATCHED_CATS = ['finished', 'favourite'];
+  let detailTab = 'about', dtItem = null, dtSeasons = [], dtToken = 0;
+  const dtShowCache = {}, dtSeasonCache = {}, dtArtCache = {};
+  const dtOpenSeasons = new Set();
+
+  // ---- ticks are stored per season as compact ranges, e.g. {"1":"1-10","2":"1-3,5"} ----
+  function epParse(str){
+    const set = new Set();
+    String(str || '').split(',').forEach(p => {
+      if(!p) return;
+      const [a, b] = p.split('-').map(Number);
+      for(let i = a; i <= (b || a); i++) set.add(i);
+    });
+    return set;
+  }
+  function epSerialize(set){
+    const arr = [...set].sort((a, b) => a - b), out = [];
+    let i = 0;
+    while(i < arr.length){
+      let j = i;
+      while(j + 1 < arr.length && arr[j + 1] === arr[j] + 1) j++;
+      out.push(i === j ? String(arr[i]) : arr[i] + '-' + arr[j]);
+      i = j + 1;
+    }
+    return out.join(',');
+  }
+  function epGet(item, s){ return epParse(item.epw && item.epw[s]); }
+  function epPut(item, s, set){
+    if(!item.epw) item.epw = {};
+    if(set.size) item.epw[s] = epSerialize(set); else delete item.epw[s];
+  }
+  function epTickedCount(item){
+    if(!item.epw) return 0;
+    let n = 0;
+    for(const k in item.epw){ if(+k > 0) n += epParse(item.epw[k]).size; }   // specials (season 0) never count toward Stats
+    return n;
+  }
+  function epToday(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  // episodes of a season that have already aired, using the "next episode" TMDB tells us about
+  function epAired(n, count, lim){
+    if(!lim || n === 0) return count;
+    if(n < lim.s) return count;
+    if(n === lim.s) return Math.max(0, Math.min(count, lim.e - 1));
+    return 0;
+  }
+  function epLim(item){ return item.nextEp ? {s: item.nextEp.s, e: item.nextEp.e} : null; }
+
+  // One-time carry-over: what you had already counted as watched becomes ticked episodes.
+  // After this runs, new seasons and episodes are NEVER ticked for you.
+  function epMigrate(item, d){
+    if(item.type !== 'tv' || item.epw !== undefined || !d || !Array.isArray(d.seasons)) return;
+    const epw = {};
+    if(['finished', 'favourite', 'up_to_date', 'stopped'].includes(item.category)){
+      const excluded = new Set(item.excludedSeasons || []);
+      const ne = d.next_episode_to_air;
+      const lim = ne ? {s: ne.season_number, e: ne.episode_number} : null;
+      d.seasons.forEach(s => {
+        if(s.season_number > 0 && !excluded.has(s.season_number)){
+          const n = epAired(s.season_number, s.episode_count || 0, lim);
+          if(n > 0) epw[s.season_number] = '1-' + n;
+        }
+      });
+    }
+    item.epw = epw;
+  }
+  // you moved a show into Finished / Favourites / Up to date with nothing ticked: tick everything that has aired
+  async function epMarkAllAired(item){
+    if(!item.tmdbId) return;
+    const d = await epLoadShow(item);
+    if(!d || !d.seasons) return;
+    const lim = epLim(item);
+    item.epw = {};
+    d.seasons.forEach(s => {
+      if(s.season_number > 0){
+        const n = epAired(s.season_number, s.episode_count || 0, lim);
+        if(n > 0) item.epw[s.season_number] = '1-' + n;
+      }
+    });
+    persist();
+    renderStats();
+  }
+
+  // ---- TMDB helpers for the title page ----
+  async function tmdbSeason(id, s, library){
+    try{
+      const r = await fetch(`${TMDB_BASE}/tv/${id}/season/${s}?api_key=${TMDB_KEY}${tmdbLangParam(library)}`);
+      if(!r.ok) return null;
+      return await r.json();
+    }catch(e){ return null; }
+  }
+  async function epLoadSeason(item, s){
+    const key = activeLibrary + '|' + item.tmdbId + '|' + s;
+    const hit = dtSeasonCache[key];
+    if(hit && Date.now() - hit.t < DT_TTL) return hit.eps;
+    const d = await tmdbSeason(item.tmdbId, s, activeLibrary);
+    if(!d || !Array.isArray(d.episodes)) return null;
+    const today = epToday();
+    const eps = d.episodes.map(x => ({n: x.episode_number, name: x.name || ('Episode ' + x.episode_number), still: x.still_path || null, date: x.air_date || '', runtime: x.runtime || 0, aired: !!x.air_date && x.air_date <= today}));
+    dtSeasonCache[key] = {t: Date.now(), eps};
+    return eps;
+  }
+  async function epLoadShow(item){
+    const key = activeLibrary + '|' + item.tmdbId;
+    const hit = dtShowCache[key];
+    if(hit && Date.now() - hit.t < 5 * 60 * 1000) return hit.d;
+    const d = await tmdbTvDetails(item.tmdbId, activeLibrary);
+    if(d){
+      if(Array.isArray(d.seasons)){
+        item.seasonsData = d.seasons.filter(s => s.season_number > 0 && (s.episode_count || 0) > 0)
+          .map(s => ({season_number: s.season_number, name: s.name, episode_count: s.episode_count}));
+      }
+      setShowStatus(item, d);       // also refreshes the "next episode" and does the one-time carry-over
+      dtShowCache[key] = {t: Date.now(), d};
+      persist();
+    }
+    return d;
+  }
+  async function tmdbArt(id, type){
+    const key = type + '|' + id;
+    if(dtArtCache[key]) return dtArtCache[key];
+    try{
+      const r = await fetch(`${TMDB_BASE}/${type === 'movie' ? 'movie' : 'tv'}/${id}/images?api_key=${TMDB_KEY}&include_image_language=en,null`);
+      if(!r.ok) return {backdrops: [], logos: []};
+      const j = await r.json();
+      return (dtArtCache[key] = {backdrops: (j.backdrops || []).slice(0, 36), logos: (j.logos || []).slice(0, 30)});
+    }catch(e){ return {backdrops: [], logos: []}; }
+  }
+  async function tmdbTrailerKey(id, type){
+    try{
+      const r = await fetch(`${TMDB_BASE}/${type === 'movie' ? 'movie' : 'tv'}/${id}/videos?api_key=${TMDB_KEY}&include_video_language=en,null`);
+      if(!r.ok) return null;
+      const list = ((await r.json()).results || []).filter(v => v.site === 'YouTube');
+      const pick = list.find(v => v.type === 'Trailer' && v.official) || list.find(v => v.type === 'Trailer') || list.find(v => v.type === 'Teaser') || list[0];
+      return pick ? pick.key : '';
+    }catch(e){ return null; }
+  }
+  function dtEffLogo(item){ return item.logoPath !== undefined ? item.logoPath : (item.logoDefault || ''); }
+  function dtFmtDate(str){
+    if(!str) return '';
+    const d = new Date(str + 'T00:00:00');
+    return isNaN(d) ? '' : d.toLocaleDateString(undefined, {year: 'numeric', month: 'short', day: 'numeric'});
+  }
+
+  // ---- how far through a show you are ----
+  function dtSeasonStats(item, n, count){
+    const set = epGet(item, n);
+    const key = activeLibrary + '|' + item.tmdbId + '|' + n;
+    const cached = dtSeasonCache[key];
+    const aired = cached ? cached.eps.filter(e => e.aired).length : epAired(n, count, epLim(item));
+    return {ticked: set.size, count, aired};
+  }
+  function dtSeriesState(item){
+    const seasons = (item.seasonsData || []).filter(s => s.season_number > 0);
+    if(item.epw === undefined || !seasons.length){
+      const w = DT_WATCHED_CATS.includes(item.category) || item.category === 'up_to_date';
+      return {on: w, ticked: 0, aired: 0, label: w ? 'Watched' : 'Not watched'};
+    }
+    let aired = 0;
+    seasons.forEach(s => { aired += dtSeasonStats(item, s.season_number, s.episode_count).aired; });
+    const ticked = epTickedCount(item);
+    const on = aired > 0 && ticked >= aired;
+    return {on, ticked, aired, label: on ? 'Watched' : (ticked > 0 ? ticked + ' of ' + aired + ' watched' : 'Not watched')};
+  }
+
+  const DT_ICON = {
+    down: '<svg viewBox="0 0 24 24"><path d="M5 9l7 7 7-7"/></svg>',
+    dots: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>',
+    cal: '<svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+    eye: '<svg viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    check: '<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+    play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
+  };
+
   async function openDetail(id){
     const item = state.items.find(i => i.id === id);
     if(!item) return;
-
+    dtItem = item; detailTab = 'about'; dtOpenSeasons.clear();
     detailBody.innerHTML = `<div class="detail-loading">Loading…</div>`;
     detailModal.style.display = 'flex';
+    detailModal.scrollTop = 0;
 
-    if(!item.detailFetched && item.tmdbId){
+    if((!item.detailFetched || item.detailBackdrop === undefined) && item.tmdbId){
       const fetchingFor = activeLibrary;
       const isMovie = item.type === 'movie';
       const [details, credits] = await Promise.all([
         isMovie ? tmdbMovieDetails(item.tmdbId, fetchingFor) : tmdbTvDetails(item.tmdbId, fetchingFor),
         isMovie ? tmdbMovieCredits(item.tmdbId, fetchingFor) : tmdbTvCredits(item.tmdbId, fetchingFor)
       ]);
-      // only cache this as "fetched" if at least one call actually succeeded —
-      // a total failure (both null) shouldn't be permanently remembered as
-      // "nothing to show", or it would never get retried
+      // only remember this as "fetched" if at least one call worked, so a total failure is retried next time
       if(details || credits){
         item.detailOverview = (details && details.overview) ? details.overview : '';
         item.detailGenres = (details && details.genres) ? details.genres.map(g => g.name) : [];
@@ -3356,125 +3632,327 @@ const itemsDocRef = doc(db, "tracker", "items");
           : ((details && details.episode_run_time && details.episode_run_time.length) ? details.episode_run_time[0] : null);
         item.detailSeasons = (!isMovie && details && details.number_of_seasons) ? details.number_of_seasons : null;
         item.detailEpisodes = (!isMovie && details && details.number_of_episodes) ? details.number_of_episodes : null;
-        item.detailCast = (credits && credits.cast) ? credits.cast.slice(0, 6).map(c => ({
-          name: c.name, character: c.character, profilePath: c.profile_path
-        })) : [];
+        item.detailCast = (credits && credits.cast) ? credits.cast.slice(0, 8).map(c => ({name: c.name, character: c.character, profilePath: c.profile_path})) : [];
+        if(details){
+          item.detailBackdrop = details.backdrop_path || null;
+          item.detailDate = details.release_date || details.first_air_date || '';
+        }
         item.detailFetched = true;
         if(activeLibrary === fetchingFor) persist();
       }
     }
+    if(dtItem === item) renderDetail(item);
+  }
 
-    renderDetail(item);
+  function dtMetaLine(item){
+    const bits = [];
+    if(item.type === 'movie' && item.detailRuntime){ const h = Math.floor(item.detailRuntime / 60), m = item.detailRuntime % 60; bits.push((h ? h + 'h ' : '') + m + 'm'); }
+    if(item.type === 'tv'){
+      if(item.detailSeasons) bits.push(item.detailSeasons + ' season' + (item.detailSeasons === 1 ? '' : 's'));
+      if(item.detailEpisodes) bits.push(item.detailEpisodes + ' episodes');
+    }
+    if(item.detailGenres && item.detailGenres.length) bits.push(item.detailGenres.slice(0, 3).join(', '));
+    return bits.join(' · ');
   }
 
   function renderDetail(item){
-    const posterHtml = item.posterPath
-      ? `<img src="${IMG_BASE}${item.posterPath}" alt="">`
-      : `<div class="fallback">${escapeHtml(item.title)}</div>`;
-
-    const genresHtml = (item.detailGenres && item.detailGenres.length)
-      ? `<div class="detail-genres">${item.detailGenres.map(g => `<span class="detail-genre-chip">${escapeHtml(g)}</span>`).join('')}</div>`
-      : '';
-
-    const metaBits = [];
-    if(item.type === 'movie' && item.detailRuntime) metaBits.push(`${item.detailRuntime} min`);
-    if(item.type === 'tv' && item.detailSeasons) metaBits.push(`${item.detailSeasons} season${item.detailSeasons === 1 ? '' : 's'}`);
-    if(item.type === 'tv' && item.detailEpisodes) metaBits.push(`${item.detailEpisodes} episodes`);
-    const metaLine = [item.year, ...metaBits].filter(Boolean).join(' · ');
-
-    const ratingHtml = item.detailRating
-      ? `<div class="detail-rating">&#9733; ${item.detailRating}/10 on TMDB</div>`
-      : '';
-
-    const overviewHtml = item.detailOverview
-      ? `<div class="detail-overview">${escapeHtml(item.detailOverview)}</div>`
-      : `<div class="detail-overview">No summary available for this title.</div>`;
-
-    const castHtml = (item.detailCast && item.detailCast.length)
-      ? `
-        <div class="detail-section-lbl">Cast</div>
-        <div class="detail-cast-row">
-          ${item.detailCast.map(c => `
-            <div class="detail-cast-item">
-              <div class="detail-cast-photo">
-                ${c.profilePath ? `<img src="${IMG_BASE}${c.profilePath}" alt="">` : `<div class="initial">${escapeHtml((c.name || '?')[0])}</div>`}
-              </div>
-              <div class="detail-cast-name">${escapeHtml(c.name || '')}</div>
-              <div class="detail-cast-char">${escapeHtml(c.character || '')}</div>
-            </div>
-          `).join('')}
-        </div>
-      `
-      : '';
-
-    const itemCats = item.type === 'movie' ? state.categories.movie : state.categories.tv;
-    const catOptions = itemCats.map(c =>
-      `<option value="${c.key}" ${item.category === c.key ? 'selected' : ''}>${c.label}</option>`
-    ).join('');
-
-    const posterEditBtn = activeLibrary === 'english' && item.tmdbId
-      ? `<button type="button" class="detail-poster-edit" id="detailPosterEditBtn" title="Change poster" aria-label="Change poster">&#128247;</button>`
-      : '';
-
-    const seasonsRowHtml = (item.type === 'tv' && item.tmdbId)
-      ? `
-        <div class="detail-status-row">
-          <div class="detail-section-lbl">Seasons watched</div>
-          <button type="button" class="detail-seasons-btn" id="detailSeasonsBtn">${escapeHtml(seasonsSummaryLabel(item))}</button>
-        </div>
-      `
-      : '';
-
+    dtItem = item;
+    const isTv = item.type === 'tv';
+    const banner = item.bannerPath || item.detailBackdrop;
+    const logo = dtEffLogo(item);
+    const headHtml = logo
+      ? `<img class="dt-logo" src="${DT_THUMB}${logo}" alt="${escapeHtml(item.title)}">`
+      : `<div class="dt-title">${escapeHtml(item.title)}${isTv && item.year ? ' <span>(' + item.year + ')</span>' : ''}</div>`;
+    const st = isTv ? dtSeriesState(item) : {on: DT_WATCHED_CATS.includes(item.category), label: DT_WATCHED_CATS.includes(item.category) ? 'Watched' : 'Not watched'};
+    const dateStr = dtFmtDate(item.detailDate) || (item.year || '');
+    const canArt = !!item.tmdbId;
+    const tab2 = isTv ? 'episodes' : 'more';
     detailBody.innerHTML = `
-      <div class="detail-hero">
-        <div class="detail-poster">${posterHtml}${posterEditBtn}</div>
-        <div class="detail-headline">
-          <div class="detail-title-row">
-            <div class="detail-title">${escapeHtml(item.title)}</div>
-            <button type="button" class="detail-title-edit" id="detailTitleEditBtn" aria-label="Edit title">&#9998;</button>
+      <div class="dt">
+        <div class="dt-banner" style="${banner ? 'background-image:url(' + DT_BACKDROP + banner + ')' : ''}">
+          <button type="button" class="dt-close" id="dtClose" aria-label="Close">${DT_ICON.down}</button>
+          <button type="button" class="dt-more" id="dtMore" aria-label="More options">${DT_ICON.dots}</button>
+          <div class="dt-menu" id="dtMenu">
+            ${activeLibrary === 'english' && canArt ? '<button type="button" data-act="poster">Change poster</button>' : ''}
+            ${canArt ? '<button type="button" data-act="banner">Change banner</button><button type="button" data-act="logo">Change logo</button>' : ''}
+            <button type="button" data-act="title">Edit title</button>
           </div>
-          <div class="detail-meta">${escapeHtml(metaLine)}</div>
-          ${ratingHtml}
-          ${genresHtml}
+          <div class="dt-head">${headHtml}<div class="dt-meta">${escapeHtml(dtMetaLine(item))}</div></div>
         </div>
-      </div>
-      <div class="detail-body">
-        <div class="detail-section-lbl">Overview</div>
-        ${overviewHtml}
-        ${castHtml}
-        <div class="detail-status-row">
-          <div class="detail-section-lbl">Your status</div>
-          <select id="detailCatSelect">${catOptions}</select>
+        <div class="dt-info">
+          <span class="dt-i">${DT_ICON.cal}<span>${escapeHtml(dateStr)}</span></span>
+          <span class="dt-i">${DT_ICON.eye}<span id="dtStatus">${escapeHtml(st.label)}</span></span>
+          <button type="button" class="ep-check dt-big ${st.on ? 'on' : ''}" id="dtSeriesCheck" aria-label="${isTv ? 'Mark whole series as watched' : 'Mark as watched'}">${DT_ICON.check}</button>
         </div>
-        ${seasonsRowHtml}
-      </div>
-    `;
+        <div class="dt-tabs">
+          <button type="button" data-tab="about" class="${detailTab === 'about' ? 'on' : ''}">About</button>
+          <button type="button" data-tab="${tab2}" class="${detailTab === tab2 ? 'on' : ''}">${isTv ? 'Episodes' : 'More'}</button>
+        </div>
+        <div class="dt-pane" id="dtPane"></div>
+      </div>`;
+    dtRenderPane(item);
+    dtEnsureLogo(item);
 
-    document.getElementById('detailTitleEditBtn').addEventListener('click', () => {
+    const $ = id => document.getElementById(id);
+    $('dtClose').addEventListener('click', () => $('detailClose').click());
+    $('dtMore').addEventListener('click', e => { e.stopPropagation(); $('dtMenu').classList.toggle('open'); });
+    $('dtMenu').addEventListener('click', e => {
+      const b = e.target.closest('button'); if(!b) return;
+      $('dtMenu').classList.remove('open');
+      dtAction(item, b.dataset.act);
+    });
+    detailBody.querySelector('.dt-tabs').addEventListener('click', e => {
+      const b = e.target.closest('button'); if(!b) return;
+      detailTab = b.dataset.tab;
+      detailBody.querySelectorAll('.dt-tabs button').forEach(x => x.classList.toggle('on', x === b));
+      dtRenderPane(item);
+    });
+    $('dtSeriesCheck').addEventListener('click', () => {
+      if(isTv) dtToggleSeries(item);
+      else { changeCategory(item.id, DT_WATCHED_CATS.includes(item.category) ? 'unwatched' : 'finished'); renderDetail(item); }
+    });
+  }
+  document.addEventListener('click', e => { const m = document.getElementById('dtMenu'); if(m && !e.target.closest('#dtMore')) m.classList.remove('open'); });
+
+  function dtAction(item, act){
+    if(act === 'poster') openPosterPicker(item);
+    else if(act === 'banner' || act === 'logo') openArtPicker(item, act);
+    else if(act === 'title'){
       const newTitle = prompt('Edit title (this stays exactly as you type it — TMDB will never overwrite it again):', item.title);
       if(newTitle && newTitle.trim() && newTitle.trim() !== item.title){
         item.title = newTitle.trim();
-        item.titleLocked = true; // Refresh Titles skips this one from now on
-        persist();
-        renderDetail(item);
-        renderGrid();
+        item.titleLocked = true;
+        persist(); renderDetail(item); renderGrid();
       }
-    });
-
-    const posterEditEl = document.getElementById('detailPosterEditBtn');
-    if(posterEditEl){
-      posterEditEl.addEventListener('click', () => openPosterPicker(item));
     }
+  }
 
-    document.getElementById('detailCatSelect').addEventListener('change', (e) => {
-      changeCategory(item.id, e.target.value);
-      renderDetail(item);
-    });
+  async function dtEnsureLogo(item){
+    if(item.logoPath !== undefined || item.logoDefault !== undefined || !item.tmdbId) return;
+    const art = await tmdbArt(item.tmdbId, item.type);
+    const en = art.logos.filter(l => l.iso_639_1 === 'en').sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+    item.logoDefault = en.length ? en[0].file_path : '';
+    persist();
+    if(item.logoDefault && dtItem === item && document.querySelector('.dt')) renderDetail(item);
+  }
 
-    const seasonsBtnEl = document.getElementById('detailSeasonsBtn');
-    if(seasonsBtnEl){
-      seasonsBtnEl.addEventListener('click', () => openSeasonManager(item));
+  function dtRenderPane(item){
+    const pane = document.getElementById('dtPane'); if(!pane) return;
+    pane.classList.toggle('grey', detailTab === 'episodes');
+    if(detailTab === 'episodes'){ pane.innerHTML = '<div id="dtEpisodes"></div>'; dtRenderEpisodes(item); return; }
+    if(detailTab === 'more'){
+      const itemCats = state.categories.movie;
+      pane.innerHTML = `
+        <div class="dt-sec"><div class="dt-lbl">Your status</div>
+          <select id="detailCatSelect">${itemCats.map(c => `<option value="${c.key}" ${item.category === c.key ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}</select></div>
+        <div class="dt-sec"><div class="dt-lbl">Customize</div>
+          <div class="dt-links">
+            ${activeLibrary === 'english' && item.tmdbId ? '<button type="button" data-act="poster">Change poster</button>' : ''}
+            ${item.tmdbId ? '<button type="button" data-act="banner">Change banner</button><button type="button" data-act="logo">Change logo</button>' : ''}
+            <button type="button" data-act="title">Edit title</button>
+          </div></div>`;
+      document.getElementById('detailCatSelect').addEventListener('change', e => { changeCategory(item.id, e.target.value); renderDetail(item); });
+      pane.querySelector('.dt-links').addEventListener('click', e => { const b = e.target.closest('button'); if(b) dtAction(item, b.dataset.act); });
+      return;
     }
+    // ---- About ----
+    const isTv = item.type === 'tv';
+    const cast = (item.detailCast && item.detailCast.length) ? `
+      <div class="dt-sec"><div class="dt-lbl">Cast</div><div class="detail-cast-row">
+        ${item.detailCast.map(c => `<div class="detail-cast-item"><div class="detail-cast-photo">${c.profilePath ? `<img src="${IMG_BASE}${c.profilePath}" alt="">` : `<div class="initial">${escapeHtml((c.name || '?')[0])}</div>`}</div><div class="detail-cast-name">${escapeHtml(c.name || '')}</div><div class="detail-cast-char">${escapeHtml(c.character || '')}</div></div>`).join('')}
+      </div></div>` : '';
+    const cats = state.categories[isTv ? 'tv' : 'movie'];
+    pane.innerHTML = `
+      <div class="dt-sec"><div class="dt-lbl">${isTv ? 'Show' : 'Movie'} info</div>
+        ${item.detailRating ? `<div class="dt-rating">&#9733; ${item.detailRating}/10 <span>TMDB</span></div>` : ''}
+        <div class="dt-over">${escapeHtml(item.detailOverview || 'No summary available for this title.')}</div></div>
+      <div id="dtTrailer"></div>
+      ${cast}
+      ${isTv ? `<div class="dt-sec"><div class="dt-lbl">Your status</div><select id="detailCatSelect">${cats.map(c => `<option value="${c.key}" ${item.category === c.key ? 'selected' : ''}>${escapeHtml(c.label)}</option>`).join('')}</select></div>` : ''}`;
+    const sel = document.getElementById('detailCatSelect');
+    if(sel) sel.addEventListener('change', e => { changeCategory(item.id, e.target.value); renderDetail(item); });
+    dtLoadTrailer(item);
+  }
+
+  async function dtLoadTrailer(item){
+    if(!item.tmdbId) return;
+    if(item.trailerKey === undefined){
+      const k = await tmdbTrailerKey(item.tmdbId, item.type);
+      if(k === null) return;                 // network problem: try again next time
+      item.trailerKey = k; persist();
+    }
+    const box = document.getElementById('dtTrailer');
+    if(!box || dtItem !== item || !item.trailerKey) return;
+    box.innerHTML = `<a class="dt-trailer" href="https://www.youtube.com/watch?v=${item.trailerKey}" target="_blank" rel="noopener">
+      <span class="dt-tr-img" style="background-image:url(https://img.youtube.com/vi/${item.trailerKey}/mqdefault.jpg)"><span class="dt-play">${DT_ICON.play}</span></span>
+      <span><b>Watch trailer</b><small>Opens YouTube</small></span></a>`;
+  }
+
+  // ---- Episodes tab ----
+  async function dtRenderEpisodes(item){
+    const token = ++dtToken;
+    const host = document.getElementById('dtEpisodes'); if(!host) return;
+    host.innerHTML = '<div class="ep-loading">Loading episodes…</div>';
+    const d = await epLoadShow(item);
+    if(token !== dtToken || !document.getElementById('dtEpisodes')) return;
+    const raw = (d && d.seasons) ? d.seasons : (item.seasonsData || []);
+    dtSeasons = raw.filter(s => (s.episode_count || 0) > 0)
+      .map(s => ({n: s.season_number, name: s.season_number === 0 ? 'Specials' : (s.name || 'Season ' + s.season_number), count: s.episode_count || 0}))
+      .sort((a, b) => (a.n === 0) - (b.n === 0) || a.n - b.n);
+    if(!dtSeasons.length){ host.innerHTML = '<div class="ep-loading">No episode information found for this show on TMDB.</div>'; return; }
+    host.innerHTML = '<div id="epNext"></div><div class="ep-h">All episodes</div>' + dtSeasons.map(s => `<div class="ep-season" data-s="${s.n}"><div class="ep-s-head"></div><div class="ep-list"></div></div>`).join('');
+    dtSeasons.forEach(s => dtDrawSeasonHead(item, s));
+    dtSeasons.forEach(s => { if(dtOpenSeasons.has(s.n)) dtOpenSeason(item, s.n, true); });
+    dtRefreshNext(item);
+    dtRefreshInfo(item);
+  }
+  function dtSeasonEl(n){ return document.querySelector(`#dtEpisodes .ep-season[data-s="${n}"]`); }
+  function dtDrawSeasonHead(item, s){
+    const el = dtSeasonEl(s.n); if(!el) return;
+    const st = dtSeasonStats(item, s.n, s.count);
+    const cls = (st.aired > 0 && st.ticked >= st.aired) ? 'on' : (st.ticked > 0 ? 'part' : '');
+    el.querySelector('.ep-s-head').innerHTML = `<span class="ep-s-name">${escapeHtml(s.name)}</span><span class="ep-chev ${dtOpenSeasons.has(s.n) ? 'open' : ''}">${DT_ICON.down}</span><span class="ep-s-count">${st.ticked}/${s.count}</span><button type="button" class="ep-check ${cls}" data-sc="${s.n}" aria-label="Mark season as watched">${DT_ICON.check}</button>`;
+  }
+  async function dtOpenSeason(item, n, force){
+    const el = dtSeasonEl(n); if(!el) return;
+    const list = el.querySelector('.ep-list');
+    if(!force && dtOpenSeasons.has(n)){ dtOpenSeasons.delete(n); list.innerHTML = ''; list.classList.remove('open'); dtDrawSeasonHead(item, dtSeasons.find(s => s.n === n)); return; }
+    dtOpenSeasons.add(n);
+    list.classList.add('open');
+    list.innerHTML = '<div class="ep-loading small">Loading…</div>';
+    dtDrawSeasonHead(item, dtSeasons.find(s => s.n === n));
+    const eps = await epLoadSeason(item, n);
+    if(!dtOpenSeasons.has(n) || !dtSeasonEl(n)) return;
+    if(!eps){ list.innerHTML = '<div class="ep-loading small">Couldn\u2019t load this season. Check your connection.</div>'; return; }
+    const set = epGet(item, n);
+    list.innerHTML = eps.map(e => dtEpRow(n, e, set.has(e.n))).join('');
+    dtDrawSeasonHead(item, dtSeasons.find(s => s.n === n));
+  }
+  function dtEpRow(n, e, on){
+    const code = (n === 0 ? 'SP' : 'S' + String(n).padStart(2, '0')) + ' | E' + String(e.n).padStart(2, '0');
+    const sub = e.aired ? (e.runtime ? e.runtime + ' min' : dtFmtDate(e.date)) : (e.date ? 'Airs ' + dtFmtDate(e.date) : 'Not announced yet');
+    return `<div class="ep-row ${e.aired ? '' : 'unaired'}" data-e="${e.n}">
+      ${e.still ? `<img class="ep-still" src="${IMG_BASE}${e.still}" alt="" loading="lazy" decoding="async">` : '<div class="ep-still"></div>'}
+      <div class="ep-info"><div class="ep-code">${code}</div><div class="ep-title">${escapeHtml(e.name)}</div><div class="ep-date">${escapeHtml(sub)}</div></div>
+      ${e.aired ? `<button type="button" class="ep-check ${on ? 'on' : ''}" data-ep="${n}|${e.n}" aria-label="Mark episode as watched">${DT_ICON.check}</button>` : ''}
+    </div>`;
+  }
+  function dtAfterChange(item){
+    persist();
+    dtSeasons.forEach(s => dtDrawSeasonHead(item, s));
+    dtRefreshNext(item);
+    dtRefreshInfo(item);
+    renderStats();
+  }
+  function dtRefreshInfo(item){
+    const st = dtSeriesState(item);
+    const lab = document.getElementById('dtStatus'), btn = document.getElementById('dtSeriesCheck');
+    if(lab) lab.textContent = st.label;
+    if(btn) btn.classList.toggle('on', st.on);
+  }
+  function dtToggleEpisode(item, n, e){
+    const set = epGet(item, n);
+    if(set.has(e)) set.delete(e); else set.add(e);
+    epPut(item, n, set);
+    const row = document.querySelector(`#dtEpisodes .ep-row[data-e="${e}"] .ep-check`);
+    if(row && dtSeasonEl(n) && dtSeasonEl(n).contains(row)) row.classList.toggle('on', set.has(e));
+    dtAfterChange(item);
+  }
+  async function dtToggleSeason(item, n){
+    const s = dtSeasons.find(x => x.n === n); if(!s) return;
+    const st = dtSeasonStats(item, n, s.count);
+    const btn = document.querySelector(`#dtEpisodes .ep-check[data-sc="${n}"]`);
+    if(btn) btn.classList.add('busy');
+    if(st.aired > 0 && st.ticked >= st.aired){ epPut(item, n, new Set()); }
+    else{
+      const eps = await epLoadSeason(item, n);
+      const set = new Set();
+      if(eps) eps.forEach(e => { if(e.aired) set.add(e.n); });
+      else for(let i = 1; i <= st.aired; i++) set.add(i);
+      epPut(item, n, set);
+    }
+    if(dtOpenSeasons.has(n)) dtOpenSeason(item, n, true);
+    dtAfterChange(item);
+  }
+  async function dtToggleSeries(item){
+    if(!item.tmdbId) return;
+    const btn = document.getElementById('dtSeriesCheck');
+    if(btn) btn.classList.add('busy');
+    const d = await epLoadShow(item);
+    const seasons = ((d && d.seasons) ? d.seasons : (item.seasonsData || [])).filter(s => s.season_number > 0 && (s.episode_count || 0) > 0);
+    const state0 = dtSeriesState(item);
+    if(state0.on){
+      seasons.forEach(s => epPut(item, s.season_number, new Set()));
+    }else{
+      await Promise.all(seasons.map(async s => {
+        const eps = await epLoadSeason(item, s.season_number);
+        const set = new Set();
+        if(eps) eps.forEach(e => { if(e.aired) set.add(e.n); });
+        else for(let i = 1; i <= epAired(s.season_number, s.episode_count, epLim(item)); i++) set.add(i);
+        epPut(item, s.season_number, set);
+      }));
+    }
+    if(btn) btn.classList.remove('busy');
+    dtSeasons.forEach(s => { if(dtOpenSeasons.has(s.n)) dtOpenSeason(item, s.n, true); });
+    dtAfterChange(item);
+  }
+  async function dtRefreshNext(item){
+    const token = dtToken;
+    const box = document.getElementById('epNext'); if(!box) return;
+    const any = epTickedCount(item) > 0;
+    for(const s of dtSeasons.filter(x => x.n > 0)){
+      const st = dtSeasonStats(item, s.n, s.count);
+      if(st.ticked >= st.aired) continue;
+      const eps = await epLoadSeason(item, s.n);
+      if(token !== dtToken || !document.getElementById('epNext')) return;
+      if(!eps) break;
+      const set = epGet(item, s.n);
+      const nxt = eps.find(e => e.aired && !set.has(e.n));
+      if(nxt){
+        box.innerHTML = `<div class="ep-h">${any ? 'Up next' : 'Start tracking'}</div>
+          <div class="ep-row next">${nxt.still ? `<img class="ep-still" src="${IMG_BASE}${nxt.still}" alt="" decoding="async">` : '<div class="ep-still"></div>'}
+          <div class="ep-info"><div class="ep-code">S${String(s.n).padStart(2, '0')} | E${String(nxt.n).padStart(2, '0')}</div><div class="ep-title">${escapeHtml(nxt.name)}</div></div>
+          <button type="button" class="ep-check" data-ep="${s.n}|${nxt.n}" aria-label="Mark episode as watched">${DT_ICON.check}</button></div>`;
+        return;
+      }
+    }
+    const ne = item.nextEp;
+    box.innerHTML = `<div class="ep-caught"><b>You\u2019re all caught up</b>${ne ? '<span>Next: S' + String(ne.s).padStart(2, '0') + 'E' + String(ne.e).padStart(2, '0') + ' airs ' + escapeHtml(dtFmtDate(ne.date)) + '</span>' : ''}</div>`;
+  }
+  detailBody.addEventListener('click', e => {
+    const item = dtItem; if(!item) return;
+    const epBtn = e.target.closest('.ep-check[data-ep]');
+    if(epBtn){ const [n, ep] = epBtn.dataset.ep.split('|').map(Number); dtToggleEpisode(item, n, ep); return; }
+    const sc = e.target.closest('.ep-check[data-sc]');
+    if(sc){ dtToggleSeason(item, +sc.dataset.sc); return; }
+    const head = e.target.closest('#dtEpisodes .ep-s-head');
+    if(head){ const n = +head.parentElement.dataset.s; dtOpenSeason(item, n, false); }
+  });
+
+  // ---- banner / logo pickers ----
+  async function openArtPicker(item, kind){
+    const title = kind === 'banner' ? 'Choose a banner' : 'Choose a logo';
+    const headHtml = `<div class="poster-picker-head"><div class="poster-picker-title">${title}</div><button type="button" class="poster-picker-cancel" id="artCancel">Cancel</button></div>`;
+    detailBody.innerHTML = `<div class="poster-picker">${headHtml}<div class="poster-picker-loading">Fetching images…</div></div>`;
+    document.getElementById('artCancel').addEventListener('click', () => renderDetail(item));
+    const art = await tmdbArt(item.tmdbId, item.type);
+    const grid = document.querySelector('.poster-picker'); if(!grid) return;
+    const list = kind === 'banner' ? art.backdrops : art.logos;
+    const cur = kind === 'banner' ? (item.bannerPath || item.detailBackdrop) : dtEffLogo(item);
+    const extra = kind === 'banner'
+      ? `<div class="art-tile reset" data-path="__default"><span>Use default</span></div>`
+      : `<div class="art-tile reset" data-path="__none"><span>No logo<br>(show title)</span></div><div class="art-tile reset" data-path="__default"><span>Use default</span></div>`;
+    grid.innerHTML = headHtml + (list.length || kind === 'logo' ? `<div class="poster-picker-grid art ${kind}">${extra}${list.map(p => `
+      <div class="art-tile ${p.file_path === cur ? 'current' : ''}" data-path="${escapeHtml(p.file_path)}"><img src="${DT_THUMB}${p.file_path}" alt="" loading="lazy">${p.file_path === cur ? '<div class="current-tag">Current</div>' : ''}</div>`).join('')}</div>`
+      : '<div class="poster-picker-empty">No alternate images found for this title on TMDB.</div>');
+    document.getElementById('artCancel').addEventListener('click', () => renderDetail(item));
+    grid.querySelectorAll('.art-tile').forEach(el => el.addEventListener('click', () => {
+      const p = el.getAttribute('data-path');
+      if(kind === 'banner'){ if(p === '__default') delete item.bannerPath; else item.bannerPath = p; }
+      else { if(p === '__default') delete item.logoPath; else if(p === '__none') item.logoPath = ''; else item.logoPath = p; }
+      persist(); renderDetail(item);
+      showToast(kind === 'banner' ? 'Banner updated' : 'Logo updated');
+    }));
   }
 
   async function openPosterPicker(item){
@@ -4144,10 +4622,98 @@ const itemsDocRef = doc(db, "tracker", "items");
 
   pwInput?.addEventListener('keydown', e => { if(e.key === 'Enter') attemptLogin(); });
 
+  // ---- Samaritan login on/off: kept in several places so one lost save can never bring it back ----
+  // value format "1:<time>" (off) or "0:<time>" (on); the newest time always wins. An old plain "1" counts as off.
+  function gateParse(v){
+    if(v == null) return null;
+    const m = /^([01])(?::(\d+))?$/.exec(String(v));
+    return m ? {off: m[1] === '1', t: +(m[2] || 0)} : null;
+  }
+  function gateNewest(a, b){ if(!a) return b; if(!b) return a; return b.t > a.t ? b : a; }
+  function gateReadSync(){
+    let a = null, b = null;
+    try{ a = gateParse(localStorage.getItem('archive-gate-off')); }catch(e){}
+    try{ const m = document.cookie.match(/(?:^|; )archive_gate_off=([^;]*)/); if(m) b = gateParse(decodeURIComponent(m[1])); }catch(e){}
+    return gateNewest(a, b);
+  }
+  function gateIdb(){
+    return new Promise((res, rej) => {
+      try{
+        const r = indexedDB.open('archive-settings', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('kv');
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      }catch(e){ rej(e); }
+    });
+  }
+  async function gateIdbRead(){
+    try{
+      const db = await gateIdb();
+      const v = await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get('archive-gate-off'); q.onsuccess = () => res(gateParse(q.result)); q.onerror = () => res(null); });
+      db.close();
+      return v;
+    }catch(e){ return null; }
+  }
+  async function gateIdbWrite(off, t){
+    try{
+      const db = await gateIdb();
+      const ok = await new Promise(res => {
+        const tx = db.transaction('kv', 'readwrite');
+        tx.objectStore('kv').put((off ? '1' : '0') + ':' + t, 'archive-gate-off');
+        tx.oncomplete = () => res(true); tx.onerror = () => res(false); tx.onabort = () => res(false);
+      });
+      db.close();
+      return ok;
+    }catch(e){ return false; }
+  }
+  function gateWriteLocal(off, t){
+    const val = (off ? '1' : '0') + ':' + t;
+    let ok = false;
+    try{ localStorage.setItem('archive-gate-off', val); ok = localStorage.getItem('archive-gate-off') === val; }catch(e){}
+    try{ document.cookie = 'archive_gate_off=' + encodeURIComponent(val) + '; max-age=31536000; path=/; SameSite=Lax'; }catch(e){}
+    document.documentElement.classList.toggle('no-gate', off);
+    return ok;
+  }
+  function gateRefreshSwitch(){
+    const sw = document.getElementById('gateSw');
+    const cur = gateReadSync();
+    if(sw) sw.classList.toggle('on', !(cur && cur.off));
+  }
+  function gateHideNow(){
+    if(!gateAlive) return;
+    gateAlive = false;
+    gate.style.display = 'none'; fab.style.display = 'flex';
+    try{ sessionStorage.setItem(MACHINE_SESSION_FLAG, '1'); }catch(e){}
+  }
+  async function gatePushCloud(off, t){
+    try{ await setDoc(itemsDocRef, {uiSettings: {gateOff: off, t}}, {merge: true}); return true; }catch(e){ return false; }
+  }
+  // runs at start: compares every copy (this device's stores + the cloud), keeps the newest, repairs the rest
+  async function gateHeal(){
+    const idb = await gateIdbRead();
+    let best = gateNewest(gateReadSync(), idb);
+    let cloud = null;
+    try{
+      const data = await Promise.race([gateCloudP, new Promise(r => setTimeout(() => r(null), 9000))]);
+      const cs = data && data.uiSettings;
+      if(cs && typeof cs.t === 'number') cloud = {off: !!cs.gateOff, t: cs.t};
+    }catch(e){}
+    const newest = gateNewest(best, cloud);
+    if(!newest) return;
+    const local = gateReadSync();
+    if(!local || local.t !== newest.t || local.off !== newest.off) gateWriteLocal(newest.off, newest.t);
+    if(!idb || idb.t !== newest.t || idb.off !== newest.off) gateIdbWrite(newest.off, newest.t);
+    if(newest.t > 0 && (!cloud || cloud.t !== newest.t || cloud.off !== newest.off)) gatePushCloud(newest.off, newest.t);
+    gateRefreshSwitch();
+    if(newest.off) gateHideNow();
+  }
+
   function initGate(){
     let skip = false;
     try{ skip = sessionStorage.getItem(MACHINE_SESSION_FLAG) === '1'; }catch(e){}
-    try{ if(localStorage.getItem('archive-gate-off') === '1') skip = true; }catch(e){}
+    const gs = gateReadSync();
+    if(gs && gs.off) skip = true;
+    gateHeal();   // checks the other saved copies (and the cloud) and repairs any that went missing
     if(skip){
       gate.style.display = 'none';
       fab.style.display = 'flex';
@@ -4258,18 +4824,21 @@ const itemsDocRef = doc(db, "tracker", "items");
     feedBtn.type = 'button'; feedBtn.className = 'util-btn'; feedBtn.style.cssText = 'width:100%;';
     feedBtn.innerHTML = '&#128065; Activity feed';
     feedBtn.addEventListener('click', () => shEl('machineFab').click());
-    // Samaritan login screen on/off (remembered on this device)
+    // Samaritan login screen on/off (saved in several places and synced through your cloud data)
     const gateRow = document.createElement('button');
     gateRow.type = 'button'; gateRow.className = 'util-btn tool-switch'; gateRow.style.cssText = 'width:100%; margin-bottom:8px;';
-    let gateOn = true;
-    try{ gateOn = localStorage.getItem('archive-gate-off') !== '1'; }catch(e){}
-    gateRow.innerHTML = '<span>&#128274; Samaritan login screen</span><span class="sw' + (gateOn ? ' on' : '') + '" id="gateSw"></span>';
-    gateRow.addEventListener('click', () => {
-      gateOn = !gateOn;
-      try{ if(gateOn) localStorage.removeItem('archive-gate-off'); else localStorage.setItem('archive-gate-off', '1'); }catch(e){}
-      document.documentElement.classList.toggle('no-gate', !gateOn);
-      shEl('gateSw').classList.toggle('on', gateOn);
-      showToast(gateOn ? 'Samaritan login is ON — it shows next time you open the app' : 'Samaritan login is OFF — the app opens straight to your library');
+    const gcur = gateReadSync();
+    gateRow.innerHTML = '<span>&#128274; Samaritan login screen</span><span class="sw' + ((gcur && gcur.off) ? '' : ' on') + '" id="gateSw"></span>';
+    gateRow.addEventListener('click', async () => {
+      const cur = gateReadSync();
+      const off = !(cur && cur.off);                    // flip
+      const t = Math.max(Date.now(), (cur ? cur.t : 0) + 1);
+      const localOk = gateWriteLocal(off, t);
+      gateRefreshSwitch();
+      const [idbOk, cloudOk] = await Promise.all([gateIdbWrite(off, t), gatePushCloud(off, t)]);
+      const saved = [localOk, idbOk].filter(Boolean).length;
+      const msg = off ? 'Samaritan login is OFF — the app opens straight to your library' : 'Samaritan login is ON — it shows next time you open the app';
+      showToast(saved === 0 ? 'Couldn\u2019t save this setting on this device — try again' : msg + (cloudOk ? ' (saved on all your devices)' : ' (saved on this device)'));
     });
     shEl('profileTools').appendChild(gateRow);
     shEl('profileTools').appendChild(feedBtn);
@@ -4298,57 +4867,106 @@ const itemsDocRef = doc(db, "tracker", "items");
       if(el && el.style.display === 'flex') el.style.display = 'none';
     });
   }
+  let shNavToken = 0;
+  function shVisibleEl(screen){
+    return screen === 'watch' ? document.querySelector('main') : screen === 'upcoming' ? shEl('viewUpcoming') : screen === 'explore' ? shEl('viewExplore') : screen === 'profile' ? shEl('viewProfile') : null;
+  }
   function setScreen(view, sub, opts){
     opts = opts || {};
-    shView = view;
-    if(sub) shSub = sub;
-    if(view === 'movies') shSub = 'watch';
-    const screen = view === 'explore' ? 'explore' : view === 'profile' ? 'profile' : (view === 'shows' && shSub === 'upcoming' ? 'upcoming' : 'watch');
-    document.body.dataset.view = view;
-    document.body.dataset.screen = screen;
-    let animated = false;
-    if(screen !== 'profile') document.body.classList.remove('sh-reorder');
-    document.querySelectorAll('#bottomNav .nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-    document.querySelectorAll('#appTop .top-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === (screen === 'upcoming' ? 'upcoming' : 'watch')));
-    if(view === 'shows' || view === 'movies'){
-      const t = view === 'shows' ? 'tv' : 'movie';
-      if(state.activeType !== t){ document.querySelector('.type-tab[data-type="' + t + '"]').click(); animated = true; }
-      if(opts.filter !== undefined){
-        state.activeFilter = opts.filter || 'all';
-        renderFilters();
-        navTransition(renderGrid);
-        animated = true;
-      }
-      shUpdateEmpty();
-    }
-    if(screen === 'profile') renderProfile();
-    if(screen === 'explore') renderExplore();
-    if(screen === 'upcoming'){ renderUpcoming(); scheduleStatusBackfill(); }
-    window.scrollTo(0, 0);
-    if(screen === 'watch' && !animated) playGridIn();
-    shPlayIn(screen);
-    // remember this screen so Back can return to it
-    const filter = (view === 'shows' || view === 'movies') ? (state.activeFilter || 'all') : 'all';
-    const changed = shCur.view !== view || shCur.sub !== shSub || shCur.filter !== filter;
-    shCur = {view, sub: shSub, filter};
-    if(opts.noPush){ return; }
-    if(changed){
+    const newSub = view === 'movies' ? 'watch' : (sub || shSub);
+    const screen = view === 'explore' ? 'explore' : view === 'profile' ? 'profile' : (view === 'shows' && newSub === 'upcoming' ? 'upcoming' : 'watch');
+    const isWatch = (view === 'shows' || view === 'movies');
+    const t = view === 'shows' ? 'tv' : 'movie';
+    const filter = isWatch ? (opts.filter !== undefined ? (opts.filter || 'all') : (state.activeType !== t ? 'all' : (state.activeFilter || 'all'))) : 'all';
+    const prevScreen = document.body.dataset.screen;
+    // history first, so Back always matches what the user did
+    const changed = shCur.view !== view || shCur.sub !== newSub || shCur.filter !== filter;
+    shCur = {view, sub: newSub, filter};
+    shView = view; shSub = newSub;
+    if(!opts.noPush && changed){
       shIdx++;
-      try{ history.pushState({sh: 1, idx: shIdx, view, sub: shSub, filter}, ''); }catch(e){}
+      try{ history.pushState({sh: 1, idx: shIdx, view, sub: newSub, filter}, ''); }catch(e){}
       shSyncBack();
     }
+    document.title = ({shows: 'Shows', movies: 'Movies', explore: 'Explore', profile: 'Profile'}[view] === 'Shows' && newSub === 'upcoming' ? 'Upcoming' : {shows: 'Shows', movies: 'Movies', explore: 'Explore', profile: 'Profile'}[view]) + ' · The Archive';
+    document.querySelectorAll('#bottomNav .nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+    document.querySelectorAll('#appTop .top-tab').forEach(b => b.classList.toggle('active', b.dataset.sub === (screen === 'upcoming' ? 'upcoming' : 'watch')));
+
+    const token = ++shNavToken;
+    const apply = () => {
+      if(token !== shNavToken) return;
+      document.body.dataset.view = view;
+      document.body.dataset.screen = screen;
+      let animated = false;
+      if(screen !== 'profile') document.body.classList.remove('sh-reorder');
+      if(isWatch){
+        const screenChanged = prevScreen !== screen;
+        shImmediate = screenChanged;            // when arriving from another screen, don't fade the grid out a second time
+        if(state.activeType !== t){ document.querySelector('.type-tab[data-type="' + t + '"]').click(); animated = true; }
+        if(opts.filter !== undefined){
+          state.activeFilter = opts.filter || 'all';
+          renderFilters();
+          navTransition(renderGrid);
+          animated = true;
+        }
+        shImmediate = false;
+        shUpdateEmpty();
+      }
+      if(screen === 'profile') renderProfile();
+      if(screen === 'explore') renderExplore();
+      if(screen === 'upcoming'){ renderUpcoming(); scheduleStatusBackfill(); }
+      window.scrollTo(0, 0);
+      if(screen === 'watch' && !animated) playGridIn();
+      shPlayIn(screen);
+    };
+    // leaving a screen: fade it out first (same 120 ms fade the poster grid uses), then show the next one
+    const outEl = (!reduceMotion && prevScreen && prevScreen !== screen) ? shVisibleEl(prevScreen) : null;
+    if(outEl){
+      outEl.classList.add('sh-leaving');
+      setTimeout(() => { outEl.classList.remove('sh-leaving'); apply(); }, 120);
+    } else apply();
   }
+
+  // entry animation: headings fade up, then posters rise in one by one (row by row), exactly like the grid
+  function shStagger(els, base, step, cls, cap){
+    els.forEach((el, i) => {
+      el.classList.remove('sh-card', 'sh-fade');
+      el.style.setProperty('--d', (base + Math.min(i, cap || 24) * step) + 'ms');
+    });
+    void document.body.offsetWidth;
+    els.forEach(el => el.classList.add(cls));
+  }
+  function shStaggerRows(rowSel, itemSel, host){
+    const items = [];
+    host.querySelectorAll(rowSel).forEach((row, ri) => {
+      row.querySelectorAll(itemSel).forEach((el, ci) => {
+        el.classList.remove('sh-card', 'sh-fade');
+        el.style.setProperty('--d', (90 + Math.min(ri, 5) * 70 + Math.min(ci, 7) * 24) + 'ms');
+        items.push(el);
+      });
+    });
+    void document.body.offsetWidth;
+    items.forEach(el => el.classList.add('sh-card'));
+  }
+  let shAnimTimer = null;
   function shPlayIn(screen){
     if(reduceMotion) return;
-    const sel = {
-      profile: '#viewProfile > header.marquee, #viewProfile .p-sec, #viewProfile .add-row, #profileTools',
-      explore: '#viewExplore #exploreSearchSlot, #viewExplore .ex-toolbar, #viewExplore .ex-hero, #viewExplore .ex-sec',
-      upcoming: '#viewUpcoming .up-group-h, #viewUpcoming .up-row, #viewUpcoming .up-empty'
-    }[screen];
-    if(!sel) return;
-    const els = [...document.querySelectorAll(sel)];
-    els.forEach((el, i) => { el.style.setProperty('--d', Math.min(i, 10) * 45 + 'ms'); el.classList.remove('sh-anim'); void el.offsetWidth; el.classList.add('sh-anim'); });
-    setTimeout(() => els.forEach(el => el.classList.remove('sh-anim')), 1100);
+    clearTimeout(shAnimTimer);
+    document.querySelectorAll('.sh-card, .sh-fade').forEach(el => el.classList.remove('sh-card', 'sh-fade'));
+    if(screen === 'profile'){
+      const host = shEl('viewProfile');
+      shStagger([...host.querySelectorAll('header.marquee, .p-head, .st-box, .outline-btn, .add-row, #profileTools')], 0, 40, 'sh-fade', 10);
+      shStaggerRows('.p-rowscroll', '.mini', host);
+    } else if(screen === 'explore'){
+      const host = shEl('viewExplore');
+      shStagger([...host.querySelectorAll('#exploreSearchSlot, .ex-toolbar, .ex-h')], 0, 40, 'sh-fade', 10);
+      shStaggerRows('.ex-hero, .ex-scroll', '.ex-slide, .ex-card', host);
+    } else if(screen === 'upcoming'){
+      const host = shEl('viewUpcoming');
+      shStagger([...host.querySelectorAll('.up-group-h, .up-empty')], 0, 30, 'sh-fade', 10);
+      shStagger([...host.querySelectorAll('.up-row')], 60, 35, 'sh-card', 16);
+    }
+    shAnimTimer = setTimeout(() => document.querySelectorAll('.sh-card, .sh-fade').forEach(el => el.classList.remove('sh-card', 'sh-fade')), 1600);
   }
   function openList(view, filter){ setScreen(view, 'watch', {filter: filter || 'all'}); }
   shEl('backBtn').addEventListener('click', () => {
@@ -4385,7 +5003,7 @@ const itemsDocRef = doc(db, "tracker", "items");
 
   // ---------- Profile ----------
   function shMini(i){
-    const inner = i.posterPath ? '<img src="' + IMG_BASE + i.posterPath + '" alt="" loading="lazy" draggable="false">' : '<div class="fallback">' + escapeHtml(i.title) + '</div>';
+    const inner = i.posterPath ? '<img src="' + IMG_BASE + i.posterPath + '" alt="" loading="lazy" decoding="async" draggable="false">' : '<div class="fallback">' + escapeHtml(i.title) + '</div>';
     return '<div class="mini" data-id="' + i.id + '"><div class="poster-art">' + inner + '</div></div>';
   }
   function shRow(title, items, go, filter, heart, unpin, rowId){
@@ -4641,7 +5259,7 @@ const itemsDocRef = doc(db, "tracker", "items");
   }
   function exCardHtml(x){
     exMap[exType + ':' + x.id] = x;
-    return '<div class="ex-card" data-id="' + x.id + '"><img src="' + IMG_BASE + x.poster_path + '" alt="" loading="lazy" draggable="false"><span class="ex-in">&#10003;</span></div>';
+    return '<div class="ex-card" data-id="' + x.id + '"><img src="' + IMG_BASE + x.poster_path + '" alt="" loading="lazy" decoding="async" draggable="false"><span class="ex-in">&#10003;</span></div>';
   }
   function renderExplore(force){
     const host = shEl('exploreDiscover');
@@ -4667,6 +5285,7 @@ const itemsDocRef = doc(db, "tracker", "items");
         else {
           ok++;
           secs[idx].querySelector('.ex-scroll').innerHTML = d.map(exCardHtml).join('');
+          if(document.body.dataset.screen === 'explore' && !reduceMotion){ shStaggerRows('.ex-scroll', '.ex-card', secs[idx]); setTimeout(() => secs[idx] && secs[idx].querySelectorAll('.sh-card').forEach(el => el.classList.remove('sh-card')), 1200); }
           if(idx === 0){
             const hero = shEl('exHero');
             const slides = d.filter(x => x.backdrop_path).slice(0, 6);
@@ -4676,6 +5295,7 @@ const itemsDocRef = doc(db, "tracker", "items");
                 const rating = x.vote_average ? ' · ★ ' + x.vote_average.toFixed(1) : '';
                 return '<div class="ex-slide" data-id="' + x.id + '" style="background-image:url(' + EX_BACKDROP + x.backdrop_path + ')"><span class="ex-pill"></span><div class="ex-slide-in"><div class="t">' + escapeHtml(exTitle(x)) + '</div><div class="m">' + exYear(x) + rating + '</div></div></div>';
               }).join('');
+              if(document.body.dataset.screen === 'explore' && !reduceMotion){ shStaggerRows('.ex-hero', '.ex-slide', host); setTimeout(() => hero.querySelectorAll('.sh-card').forEach(el => el.classList.remove('sh-card')), 1200); }
             } else if(hero){ hero.remove(); }
           }
           exMarkInLibrary();

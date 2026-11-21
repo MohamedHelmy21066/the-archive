@@ -1,5 +1,5 @@
 // The Archive — service worker. Bump CACHE_VERSION whenever you want to force a fresh app shell.
-const CACHE_VERSION = 'archive-v8';
+const CACHE_VERSION = 'archive-v12';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 const IMG_CACHE = 'archive-images-v1';
 const IMG_MAX = 400;
@@ -16,12 +16,14 @@ self.addEventListener('activate', e => {
 
 async function networkFirst(req){
   const cache = await caches.open(CACHE_VERSION);
+  // every page load ("./" and "./index.html") shares ONE cached copy, so the offline fallback is always the newest page
+  const key = req.mode === 'navigate' ? new Request('./index.html') : req;
   try{
-    const res = await fetch(req);
-    if(res && res.ok) cache.put(req, res.clone());
+    const res = await fetch(req, {cache: 'no-cache'});   // revalidate, so an old copy is never served by mistake
+    if(res && res.ok) cache.put(key, res.clone());
     return res;
   }catch(err){
-    return (await cache.match(req)) || (await cache.match('./index.html'));
+    return (await cache.match(key)) || (await cache.match('./index.html'));
   }
 }
 async function staleWhileRevalidate(req, cacheName){
