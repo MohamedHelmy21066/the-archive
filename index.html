@@ -1349,6 +1349,27 @@
   .poster-picker-grid.art.logo .art-tile.reset{ background:#fff7c2; color:#000; }
   .art-tile.current{ border-color:var(--gold); }
   .art-tile .current-tag{ position:absolute; left:6px; bottom:6px; background:var(--gold); color:#000; border-radius:999px; font:700 10px var(--font-display); padding:3px 8px; }
+
+  /* =================== title page motion =================== */
+  @keyframes dt-fade{ from{ opacity:0; } to{ opacity:1; } }
+  @keyframes dt-fade-out{ to{ opacity:0; } }
+  @keyframes dt-rise{ from{ opacity:0; transform:translateY(6%); } to{ opacity:1; transform:none; } }
+  @keyframes dt-sink{ to{ opacity:0; transform:translateY(4%); } }
+  @keyframes dt-rise-desk{ from{ opacity:0; transform:translateY(18px) scale(.97); } to{ opacity:1; transform:none; } }
+  @keyframes dt-sink-desk{ to{ opacity:0; transform:translateY(10px) scale(.98); } }
+  @keyframes ep-pop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.3); } 100%{ transform:scale(1); } }
+  #detailModal.dt-in{ animation:dt-fade .22s ease both; }
+  #detailModal.dt-in .detail-modal-card{ animation:dt-rise .36s cubic-bezier(.2,.7,.2,1) both; }
+  #detailModal.dt-out{ animation:dt-fade-out .17s ease both; }
+  #detailModal.dt-out .detail-modal-card{ animation:dt-sink .17s ease both; }
+  .ep-check.pop{ animation:ep-pop .3s ease; }
+  @media (min-width:700px){
+    #detailModal.dt-in .detail-modal-card{ animation-name:dt-rise-desk; }
+    #detailModal.dt-out .detail-modal-card{ animation-name:dt-sink-desk; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    #detailModal.dt-in, #detailModal.dt-in .detail-modal-card, #detailModal.dt-out, #detailModal.dt-out .detail-modal-card, .ep-check.pop{ animation:none; }
+  }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 </head>
@@ -3607,13 +3628,65 @@ const itemsDocRef = doc(db, "tracker", "items");
     play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>'
   };
 
+  // ---- motion for the title page (same fade-out / rise-in as the rest of the app) ----
+  let dtAnimTimer = null, dtTabToken = 0;
+  function dtClean(els){
+    clearTimeout(dtAnimTimer);
+    dtAnimTimer = setTimeout(() => els.forEach(el => el.classList.remove('sh-card', 'sh-fade')), 1600);
+  }
+  function dtPaneParts(){
+    const pane = document.getElementById('dtPane');
+    if(!pane) return {heads: [], cards: []};
+    return {
+      heads: [...pane.querySelectorAll('.dt-sec, .dt-trailer, .ep-h, .ep-season, .ep-caught')],
+      cards: [...pane.querySelectorAll('.detail-cast-item, #epNext .ep-row')]
+    };
+  }
+  function dtPlayInPane(){
+    if(reduceMotion) return;
+    const {heads, cards} = dtPaneParts();
+    shStagger(heads, 0, 45, 'sh-fade', 12);
+    shStagger(cards, 120, 40, 'sh-card', 12);
+    dtClean([...heads, ...cards]);
+  }
+  function dtPlayIn(){
+    if(reduceMotion) return;
+    const root = detailBody.querySelector('.dt'); if(!root) return;
+    const top = ['.dt-banner', '.dt-info', '.dt-tabs'].map(q => root.querySelector(q)).filter(Boolean);
+    shStagger(top, 0, 60, 'sh-fade', 4);
+    const {heads, cards} = dtPaneParts();
+    shStagger(heads, 160, 45, 'sh-fade', 12);
+    shStagger(cards, 280, 40, 'sh-card', 12);
+    dtClean([...top, ...heads, ...cards]);
+  }
+  function dtStaggerTiles(grid){
+    if(reduceMotion || !grid) return;
+    const tiles = [...grid.querySelectorAll('.art-tile, .poster-picker-item')];
+    shStagger(tiles, 40, 22, 'sh-card', 24);
+    dtClean(tiles);
+  }
+  function dtPop(el){
+    if(!el || reduceMotion) return;
+    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+  }
+  function dtClose(){
+    const m = detailModal;
+    if(m.style.display !== 'flex' || m.classList.contains('dt-out')) return;
+    if(reduceMotion){ m.style.display = 'none'; return; }
+    m.classList.add('dt-out');
+    setTimeout(() => { m.style.display = 'none'; m.classList.remove('dt-out', 'dt-in'); }, 170);
+  }
+
   async function openDetail(id){
     const item = state.items.find(i => i.id === id);
     if(!item) return;
     dtItem = item; detailTab = 'about'; dtOpenSeasons.clear();
     detailBody.innerHTML = `<div class="detail-loading">Loading…</div>`;
+    detailModal.classList.remove('dt-out');
     detailModal.style.display = 'flex';
+    if(!reduceMotion){ detailModal.classList.add('dt-in'); setTimeout(() => detailModal.classList.remove('dt-in'), 520); }
     detailModal.scrollTop = 0;
+    const cardEl = detailModal.querySelector('.detail-modal-card'); if(cardEl) cardEl.scrollTop = 0;
 
     if((!item.detailFetched || item.detailBackdrop === undefined) && item.tmdbId){
       const fetchingFor = activeLibrary;
@@ -3641,7 +3714,7 @@ const itemsDocRef = doc(db, "tracker", "items");
         if(activeLibrary === fetchingFor) persist();
       }
     }
-    if(dtItem === item) renderDetail(item);
+    if(dtItem === item) renderDetail(item, true);
   }
 
   function dtMetaLine(item){
@@ -3655,7 +3728,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     return bits.join(' · ');
   }
 
-  function renderDetail(item){
+  function renderDetail(item, anim){
     dtItem = item;
     const isTv = item.type === 'tv';
     const banner = item.bannerPath || item.detailBackdrop;
@@ -3691,6 +3764,7 @@ const itemsDocRef = doc(db, "tracker", "items");
         <div class="dt-pane" id="dtPane"></div>
       </div>`;
     dtRenderPane(item);
+    if(anim) dtPlayIn();
     dtEnsureLogo(item);
 
     const $ = id => document.getElementById(id);
@@ -3703,9 +3777,19 @@ const itemsDocRef = doc(db, "tracker", "items");
     });
     detailBody.querySelector('.dt-tabs').addEventListener('click', e => {
       const b = e.target.closest('button'); if(!b) return;
+      if(detailTab === b.dataset.tab) return;
       detailTab = b.dataset.tab;
       detailBody.querySelectorAll('.dt-tabs button').forEach(x => x.classList.toggle('on', x === b));
-      dtRenderPane(item);
+      const pane = $('dtPane');
+      if(reduceMotion || !pane){ dtRenderPane(item); return; }
+      const tok = ++dtTabToken;
+      pane.classList.add('sh-leaving');
+      setTimeout(() => {
+        if(tok !== dtTabToken) return;
+        pane.classList.remove('sh-leaving');
+        dtRenderPane(item);
+        if(detailTab !== 'episodes') dtPlayInPane();     // the Episodes tab animates itself once its data has loaded
+      }, 120);
     });
     $('dtSeriesCheck').addEventListener('click', () => {
       if(isTv) dtToggleSeries(item);
@@ -3805,6 +3889,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     dtSeasons.forEach(s => { if(dtOpenSeasons.has(s.n)) dtOpenSeason(item, s.n, true); });
     dtRefreshNext(item);
     dtRefreshInfo(item);
+    dtPlayInPane();
   }
   function dtSeasonEl(n){ return document.querySelector(`#dtEpisodes .ep-season[data-s="${n}"]`); }
   function dtDrawSeasonHead(item, s){
@@ -3826,6 +3911,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     if(!eps){ list.innerHTML = '<div class="ep-loading small">Couldn\u2019t load this season. Check your connection.</div>'; return; }
     const set = epGet(item, n);
     list.innerHTML = eps.map(e => dtEpRow(n, e, set.has(e.n))).join('');
+    if(!force && !reduceMotion){ const rows = [...list.querySelectorAll('.ep-row')]; shStagger(rows, 0, 28, 'sh-card', 14); dtClean(rows); }
     dtDrawSeasonHead(item, dtSeasons.find(s => s.n === n));
   }
   function dtEpRow(n, e, on){
@@ -3855,7 +3941,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     if(set.has(e)) set.delete(e); else set.add(e);
     epPut(item, n, set);
     const row = document.querySelector(`#dtEpisodes .ep-row[data-e="${e}"] .ep-check`);
-    if(row && dtSeasonEl(n) && dtSeasonEl(n).contains(row)) row.classList.toggle('on', set.has(e));
+    if(row && dtSeasonEl(n) && dtSeasonEl(n).contains(row)){ row.classList.toggle('on', set.has(e)); dtPop(row); }
     dtAfterChange(item);
   }
   async function dtToggleSeason(item, n){
@@ -3873,6 +3959,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     }
     if(dtOpenSeasons.has(n)) dtOpenSeason(item, n, true);
     dtAfterChange(item);
+    dtPop(document.querySelector(`#dtEpisodes .ep-check[data-sc="${n}"]`));
   }
   async function dtToggleSeries(item){
     if(!item.tmdbId) return;
@@ -3895,6 +3982,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     if(btn) btn.classList.remove('busy');
     dtSeasons.forEach(s => { if(dtOpenSeasons.has(s.n)) dtOpenSeason(item, s.n, true); });
     dtAfterChange(item);
+    dtPop(document.getElementById('dtSeriesCheck'));
   }
   async function dtRefreshNext(item){
     const token = dtToken;
@@ -3934,7 +4022,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     const title = kind === 'banner' ? 'Choose a banner' : 'Choose a logo';
     const headHtml = `<div class="poster-picker-head"><div class="poster-picker-title">${title}</div><button type="button" class="poster-picker-cancel" id="artCancel">Cancel</button></div>`;
     detailBody.innerHTML = `<div class="poster-picker">${headHtml}<div class="poster-picker-loading">Fetching images…</div></div>`;
-    document.getElementById('artCancel').addEventListener('click', () => renderDetail(item));
+    document.getElementById('artCancel').addEventListener('click', () => renderDetail(item, true));
     const art = await tmdbArt(item.tmdbId, item.type);
     const grid = document.querySelector('.poster-picker'); if(!grid) return;
     const list = kind === 'banner' ? art.backdrops : art.logos;
@@ -3945,12 +4033,13 @@ const itemsDocRef = doc(db, "tracker", "items");
     grid.innerHTML = headHtml + (list.length || kind === 'logo' ? `<div class="poster-picker-grid art ${kind}">${extra}${list.map(p => `
       <div class="art-tile ${p.file_path === cur ? 'current' : ''}" data-path="${escapeHtml(p.file_path)}"><img src="${DT_THUMB}${p.file_path}" alt="" loading="lazy">${p.file_path === cur ? '<div class="current-tag">Current</div>' : ''}</div>`).join('')}</div>`
       : '<div class="poster-picker-empty">No alternate images found for this title on TMDB.</div>');
-    document.getElementById('artCancel').addEventListener('click', () => renderDetail(item));
+    document.getElementById('artCancel').addEventListener('click', () => renderDetail(item, true));
+    dtStaggerTiles(grid);
     grid.querySelectorAll('.art-tile').forEach(el => el.addEventListener('click', () => {
       const p = el.getAttribute('data-path');
       if(kind === 'banner'){ if(p === '__default') delete item.bannerPath; else item.bannerPath = p; }
       else { if(p === '__default') delete item.logoPath; else if(p === '__none') item.logoPath = ''; else item.logoPath = p; }
-      persist(); renderDetail(item);
+      persist(); renderDetail(item, true);
       showToast(kind === 'banner' ? 'Banner updated' : 'Logo updated');
     }));
   }
@@ -3965,7 +4054,7 @@ const itemsDocRef = doc(db, "tracker", "items");
         <div class="poster-picker-loading">Fetching poster art…</div>
       </div>
     `;
-    document.getElementById('posterPickerCancel').addEventListener('click', () => renderDetail(item));
+    document.getElementById('posterPickerCancel').addEventListener('click', () => renderDetail(item, true));
 
     const posters = await tmdbImages(item.tmdbId, item.type);
     renderPosterPicker(item, posters);
@@ -3983,7 +4072,7 @@ const itemsDocRef = doc(db, "tracker", "items");
         </div>
         <div class="poster-picker-empty">No alternate posters found for this title on TMDB.</div>
       `;
-      document.getElementById('posterPickerCancel').addEventListener('click', () => renderDetail(item));
+      document.getElementById('posterPickerCancel').addEventListener('click', () => renderDetail(item, true));
       return;
     }
 
@@ -4001,15 +4090,16 @@ const itemsDocRef = doc(db, "tracker", "items");
         `).join('')}
       </div>
     `;
-    document.getElementById('posterPickerCancel').addEventListener('click', () => renderDetail(item));
+    document.getElementById('posterPickerCancel').addEventListener('click', () => renderDetail(item, true));
+    dtStaggerTiles(grid);
     grid.querySelectorAll('.poster-picker-item').forEach(el => {
       el.addEventListener('click', () => {
         const path = el.getAttribute('data-path');
-        if(path === item.posterPath){ renderDetail(item); return; }
+        if(path === item.posterPath){ renderDetail(item, true); return; }
         item.posterPath = path;
         item.posterLocked = true; // don't let Refresh Titles silently swap this back
         persist();
-        renderDetail(item);
+        renderDetail(item, true);
         renderGrid();
         showToast(`Poster updated for "${item.title}"`);
         machineLog(`Changed poster art for "${item.title}".`);
@@ -4128,11 +4218,9 @@ const itemsDocRef = doc(db, "tracker", "items");
     });
   }
 
-  document.getElementById('detailClose').addEventListener('click', () => {
-    detailModal.style.display = 'none';
-  });
+  document.getElementById('detailClose').addEventListener('click', () => { dtClose(); });
   detailModal.addEventListener('click', (e) => {
-    if(e.target === detailModal) detailModal.style.display = 'none';
+    if(e.target === detailModal) dtClose();
   });
 
   // ---------- Category manager (add / rename / delete) ----------
@@ -4864,6 +4952,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     shCloseSheet();
     ['surpriseModal', 'statsModal', 'detailModal', 'brandingModal', 'catModal'].forEach(id => {
       const el = shEl(id);
+      if(id === 'detailModal'){ dtClose(); return; }
       if(el && el.style.display === 'flex') el.style.display = 'none';
     });
   }
