@@ -1375,6 +1375,13 @@
   .upd-banner{ position:fixed; left:12px; right:12px; bottom:calc(var(--nav-h) + 14px + env(safe-area-inset-bottom)); z-index:90; background:#000; color:#fff; border-radius:14px; padding:12px 14px; display:flex; align-items:center; gap:12px; font:600 14px var(--font-body); box-shadow:0 10px 30px rgba(0,0,0,.35); animation:sh-fade-up .35s ease both; }
   .upd-banner button{ margin-left:auto; background:var(--gold); color:#000; border:0; border-radius:999px; padding:8px 16px; font:700 13px var(--font-display); cursor:pointer; }
   @media (min-width:900px){ .upd-banner{ left:auto; right:20px; bottom:20px; max-width:380px; } }
+
+  /* --- backups --- */
+  .bk-list{ display:flex; flex-direction:column; gap:8px; }
+  .bk-row{ display:flex; align-items:center; gap:12px; background:#f4f4f4; border-radius:12px; padding:12px 14px; }
+  .bk-row b{ display:block; font:700 15px var(--font-body); } .bk-row small{ display:block; color:#777; font:400 12px var(--font-body); margin-top:2px; }
+  .bk-row .sh-chip{ margin-left:auto; flex:none; background:#fff; }
+  .bk-empty{ color:#777; font:400 14px var(--font-body); padding:10px 2px; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 </head>
@@ -1921,6 +1928,81 @@ const itemsDocRef = doc(db, "tracker", "items");
   }
 
   // three-way merge by title: "base" = what both sides last agreed on
+  // ---- automatic backups: kept on this device, so a bad sync can always be undone ----
+  const BK_KEEP = 8;
+  function bkOpen(){
+    return new Promise((res, rej) => {
+      try{
+        const r = indexedDB.open('archive-backups', 1);
+        r.onupgradeneeded = () => r.result.createObjectStore('snap', {keyPath: 't'});
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      }catch(e){ rej(e); }
+    });
+  }
+  async function bkSave(library, reason){
+    try{
+      const st = libraries[library] || (library === activeLibrary ? state : null);
+      if(!st || !st.items || !st.items.length) return false;
+      const data = {items: st.items, categories: st.categories, filterOrder: st.filterOrder};
+      const ticks = st.items.reduce((n, i) => n + (i.type === 'tv' ? epTickedCount(i) : 0), 0);
+      const snap = {t: Date.now(), library, reason, titles: st.items.length, ticks, json: JSON.stringify(data)};
+      const db = await bkOpen();
+      await new Promise(res => { const tx = db.transaction('snap', 'readwrite'); tx.objectStore('snap').put(snap); tx.oncomplete = () => res(); tx.onerror = () => res(); tx.onabort = () => res(); });
+      // keep only the newest few per library
+      const all = await new Promise(res => { const q = db.transaction('snap').objectStore('snap').getAllKeys(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); });
+      const mine = await new Promise(res => { const out = []; const c = db.transaction('snap').objectStore('snap').openCursor(); c.onsuccess = () => { const cur = c.result; if(cur){ if(cur.value.library === library) out.push(cur.value.t); cur.continue(); } else res(out); }; c.onerror = () => res(out); });
+      const old = mine.sort((a, b) => b - a).slice(BK_KEEP);
+      if(old.length) await new Promise(res => { const tx = db.transaction('snap', 'readwrite'); old.forEach(k => tx.objectStore('snap').delete(k)); tx.oncomplete = () => res(); tx.onerror = () => res(); });
+      db.close();
+      try{ localStorage.setItem(`${STORAGE_KEY}-bk-last-${library}`, String(snap.t)); }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+  // take a backup unless one was taken recently
+  function bkMaybe(library, reason, minGapMs){
+    let last = 0;
+    try{ last = +localStorage.getItem(`${STORAGE_KEY}-bk-last-${library}`) || 0; }catch(e){}
+    if(Date.now() - last < minGapMs) return Promise.resolve(false);
+    return bkSave(library, reason);
+  }
+  async function bkList(library){
+    try{
+      const db = await bkOpen();
+      const rows = await new Promise(res => {
+        const out = []; const c = db.transaction('snap').objectStore('snap').openCursor();
+        c.onsuccess = () => { const cur = c.result; if(cur){ const v = cur.value; if(v.library === library) out.push({t: v.t, reason: v.reason, titles: v.titles, ticks: v.ticks}); cur.continue(); } else res(out); };
+        c.onerror = () => res(out);
+      });
+      db.close();
+      return rows.sort((a, b) => b.t - a.t);
+    }catch(e){ return []; }
+  }
+  async function bkGet(t){
+    try{
+      const db = await bkOpen();
+      const snap = await new Promise(res => { const q = db.transaction('snap').objectStore('snap').get(t); q.onsuccess = () => res(q.result); q.onerror = () => res(null); });
+      db.close();
+      return snap;
+    }catch(e){ return null; }
+  }
+
+  function syMergeEpw(l, c, b){
+    // watched episodes: unticking on one side only is respected, but when both sides changed (or there is no record
+    // of the last agreed state) every tick from both sides is kept, so ticks can never be lost by a sync
+    const eq = (x, y) => syStable(x) === syStable(y);
+    const out = {};
+    new Set([...Object.keys(l || {}), ...Object.keys(c || {})]).forEach(season => {
+      const ls = (l || {})[season], cs = (c || {})[season], bs = b ? b[season] : undefined;
+      let v;
+      if(eq(ls, cs)) v = ls;
+      else if(b && eq(cs, bs)) v = ls;
+      else if(b && eq(ls, bs)) v = cs;
+      else v = epSerialize(new Set([...epParse(ls), ...epParse(cs)]));
+      if(v) out[season] = v;
+    });
+    return out;
+  }
   function syMerge(base, local, cloud){
     const mapOf = arr => { const m = new Map(); (arr || []).forEach(i => m.set(i.id, i)); return m; };
     const eq = (a, b) => syStable(a) === syStable(b);
@@ -1935,27 +2017,33 @@ const itemsDocRef = doc(db, "tracker", "items");
           if(eq(l, b)){ out.set(id, c); return; }          // changed only elsewhere
           const m = {};                                    // changed on both: field by field, this device wins ties
           new Set([...Object.keys(l), ...Object.keys(c)]).forEach(k => {
+            if(k === 'epw'){ const e = syMergeEpw(l.epw, c.epw, b.epw); if(Object.keys(e).length || l.epw !== undefined || c.epw !== undefined) m.epw = e; return; }
             const v = eq(l[k], b[k]) ? c[k] : l[k];
             if(v !== undefined) m[k] = v;
           });
           out.set(id, m); return;
         }
-        out.set(id, l); return;
+        // no record of the last agreed state (first run, or a device that wasn't opened for a while):
+        // the cloud copy wins, because this device is more likely the stale one. Ticks from both sides are kept.
+        const m = Object.assign({}, c);
+        if(l.epw !== undefined || c.epw !== undefined) m.epw = syMergeEpw(l.epw, c.epw, undefined);
+        out.set(id, m); return;
       }
       if(l && !c){ if(B && b && eq(l, b)) return; out.set(id, l); return; }   // deleted elsewhere (untouched here) -> delete
       if(c && !l){ if(B && b && eq(c, b)) return; out.set(id, c); return; }   // deleted here (untouched there) -> delete
     });
     const ids = arr => (arr || []).map(i => i.id);
     const lo = ids(local.items), co = ids(cloud.items), bo = B ? ids(base.items) : null;
-    const src = (bo && syStable(lo) === syStable(bo)) ? co : lo;                // whichever side reordered last
+    const src = (!bo || syStable(lo) === syStable(bo)) ? co : lo;               // whichever side reordered last
     const seen = new Set(), ordered = [];
     src.forEach(id => { if(out.has(id) && !seen.has(id)){ ordered.push(out.get(id)); seen.add(id); } });
     const extra = [...out.keys()].filter(id => !seen.has(id)).map(id => out.get(id));
     const pick = k => {
       const l = local[k], c = cloud[k], b = base ? base[k] : undefined;
       if(eq(l, c)) return l;
-      if(base && eq(c, b)) return l;
-      if(base && eq(l, b)) return c;
+      if(!base) return c || l;
+      if(eq(c, b)) return l;
+      if(eq(l, b)) return c;
       return l;
     };
     return {items: extra.concat(ordered), categories: pick('categories'), filterOrder: pick('filterOrder')};
@@ -2034,6 +2122,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     const merged = syMerge(syReadBase(library), local, cloud);
     const mergedSig = syStable(merged);
     if(mergedSig !== before){
+      await bkMaybe(library, 'before a sync', 20 * 60 * 1000);
       syApply(st, merged);
       try{ localStorage.setItem(`${STORAGE_KEY}-${library}`, JSON.stringify({items: st.items, categories: st.categories, filterOrder: st.filterOrder})); }catch(e){}
       syAfterMerge(library);
@@ -5098,6 +5187,11 @@ const itemsDocRef = doc(db, "tracker", "items");
       const msg = off ? 'Samaritan login is OFF — the app opens straight to your library' : 'Samaritan login is ON — it shows next time you open the app';
       showToast(saved === 0 ? 'Couldn\u2019t save this setting on this device — try again' : msg + (cloudOk ? ' (saved on all your devices)' : ' (saved on this device)'));
     });
+    const bkBtn = document.createElement('button');
+    bkBtn.type = 'button'; bkBtn.className = 'util-btn'; bkBtn.style.cssText = 'width:100%; margin-bottom:8px;';
+    bkBtn.innerHTML = '&#128190; Backups';
+    bkBtn.addEventListener('click', () => openBackups());
+    shEl('profileTools').appendChild(bkBtn);
     shEl('profileTools').appendChild(gateRow);
     shEl('profileTools').appendChild(feedBtn);
     // add-search lives in Explore
@@ -5395,6 +5489,32 @@ const itemsDocRef = doc(db, "tracker", "items");
   shEl('profileBody').addEventListener('pointerup', shDragEnd);
   shEl('profileBody').addEventListener('pointercancel', shDragEnd);
 
+
+  // ---------- Backups screen ----------
+  async function openBackups(){
+    const rows = await bkList(activeLibrary);
+    const fmt = t => new Date(t).toLocaleString(undefined, {weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'});
+    const list = rows.length
+      ? rows.map(r => '<div class="bk-row"><div><b>' + fmt(r.t) + '</b><small>' + r.titles + ' titles · ' + (r.ticks || 0).toLocaleString() + ' episodes ticked · ' + escapeHtml(r.reason || '') + '</small></div><button type="button" class="sh-chip" data-bk="' + r.t + '">Restore</button></div>').join('')
+      : '<div class="bk-empty">No backups yet. Tap &ldquo;Back up now&rdquo; to make the first one.</div>';
+    shOpenSheet('<div class="sh-title">Backups</div><div class="sh-meta">Your library is copied automatically once a day, and right before anything from another device changes it. The newest ' + BK_KEEP + ' copies are kept on this device. If something ever looks wrong, restore an earlier copy.</div>' +
+      '<button type="button" class="yellow-btn sh-go" id="bkNow" style="margin-top:6px">Back up now</button><div class="sh-lbl">Saved copies on this device</div><div class="bk-list">' + list + '</div>');
+  }
+  async function restoreBackup(t){
+    const snap = await bkGet(t);
+    if(!snap) return;
+    const when = new Date(t).toLocaleString();
+    if(!confirm('Restore the backup from ' + when + '?\n\nYour library will go back exactly as it was then (' + snap.titles + ' titles, ' + (snap.ticks || 0) + ' episodes ticked). Your current library is backed up first, so you can undo this.')) return;
+    await bkSave(activeLibrary, 'before restoring');
+    const data = JSON.parse(snap.json);
+    syApply(state, {items: data.items, categories: data.categories, filterOrder: data.filterOrder});
+    persist();
+    shCloseSheet();
+    renderFilters(); renderGrid(); renderStats();
+    showToast('Backup restored');
+  }
+  setTimeout(() => bkMaybe(activeLibrary, 'daily backup', 6 * 3600 * 1000), 8000);
+
   // ---------- Upcoming episodes ----------
   function shDayDiff(dateStr){
     const t = new Date(); t.setHours(0,0,0,0);
@@ -5464,6 +5584,9 @@ const itemsDocRef = doc(db, "tracker", "items");
       togglePin(t, k); openPicker(); shEl('shSheetBody').scrollTop = sc; return;
     }
     if(e.target.closest('#pkDone')){ shCloseSheet(); return; }
+    if(e.target.closest('#bkNow')){ bkSave(activeLibrary, 'saved by you').then(() => { showToast('Backup saved'); openBackups(); }); return; }
+    const rb = e.target.closest('[data-bk]');
+    if(rb){ restoreBackup(+rb.dataset.bk); return; }
     const chip = e.target.closest('.sh-chip[data-cat]');
     if(chip) exAdd(chip.dataset.cat);
   });
