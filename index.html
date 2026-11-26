@@ -1382,6 +1382,15 @@
   .bk-row b{ display:block; font:700 15px var(--font-body); } .bk-row small{ display:block; color:#777; font:400 12px var(--font-body); margin-top:2px; }
   .bk-row .sh-chip{ margin-left:auto; flex:none; background:#fff; }
   .bk-empty{ color:#777; font:400 14px var(--font-body); padding:10px 2px; }
+
+  /* --- search result plus / tick box (like TV Time) --- */
+  .sr-box{ width:40px; height:40px; flex:none; border-radius:10px; border:2px solid #f2c200; background:transparent; color:#f2c200; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; transition:background .15s, border-color .15s, color .15s, transform .1s; }
+  .sr-box svg{ width:22px; height:22px; fill:none; stroke:currentColor; stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round; }
+  .sr-box:hover{ background:rgba(242,194,0,.14); }
+  .sr-box:active{ transform:scale(.92); }
+  .sr-box.on{ border-color:transparent; color:#8d8d8d; }
+  .sr-box.on:hover{ background:#f0f0f0; }
+  .sr-box.pop{ animation:ep-pop .3s ease; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600&display=swap" rel="stylesheet">
 </head>
@@ -3390,15 +3399,54 @@ const itemsDocRef = doc(db, "tracker", "items");
           <div class="t">${escapeHtml(title)}</div>
           <div class="y">${year} · ${r.media_type === 'movie' ? 'Movie' : 'TV'}</div>
         </div>
-        <div class="add-badge">ADD</div>
+        ${srBoxHtml(!!srInArchive(r))}
       `;
-      row.addEventListener('click', () => addFromSearchResult(r));
+      row.addEventListener('click', e => {
+        if(e.target.closest('.sr-box')){ e.stopPropagation(); srToggle(r); return; }
+        const it = srInArchive(r);
+        if(it) openDetail(it.id); else exOpen(r, r.media_type);      // not owned yet: pick where to add it
+      });
       searchResults.appendChild(row);
     });
     searchResults.classList.add('open');
   }
 
+  // ---- plus box (add) / tick box (already in your archive; tap to remove) ----
+  const SR_PLUS = '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>';
+  function srInArchive(r){ return r && (r.media_type === 'movie' || r.media_type === 'tv') ? exFindItem(r, r.media_type) : null; }
+  function srBoxHtml(inLib){
+    return '<button type="button" class="sr-box ' + (inLib ? 'on' : '') + '" aria-label="' + (inLib ? 'In your archive. Tap to remove' : 'Add to your archive') + '">' + (inLib ? DT_ICON.check : SR_PLUS) + '</button>';
+  }
+  function srRefreshRows(){
+    document.querySelectorAll('#searchResults .search-row').forEach((row, i) => {
+      const r = currentResults[i]; if(!r) return;
+      const inLib = !!srInArchive(r);
+      const box = row.querySelector('.sr-box'); if(!box) return;
+      if(box.classList.contains('on') === inLib) return;
+      box.classList.toggle('on', inLib);
+      box.innerHTML = inLib ? DT_ICON.check : SR_PLUS;
+      box.setAttribute('aria-label', inLib ? 'In your archive. Tap to remove' : 'Add to your archive');
+      if(!reduceMotion){ box.classList.remove('pop'); void box.offsetWidth; box.classList.add('pop'); }
+    });
+  }
+  function srToggle(r){
+    const it = srInArchive(r);
+    if(!it){
+      const title = r.title || r.name || 'Untitled';
+      const dateStr = r.release_date || r.first_air_date || '';
+      addItem({title, year: dateStr ? parseInt(dateStr.slice(0, 4), 10) : new Date().getFullYear(), type: r.media_type, tmdbId: r.id, posterPath: r.poster_path || null});
+    }else{
+      // untick = remove. Ask first only when there is progress that would be lost.
+      const progress = (it.type === 'tv' && epTickedCount(it) > 0) || !['unwatched', 'havent_started'].includes(it.category);
+      if(progress && !confirm('Remove "' + it.title + '" from your archive?\n\nIts status and watched episodes go with it. You can bring it back with Undo (Profile \u2192 Undo).')) return;
+      removeItem(it.id);
+    }
+    srRefreshRows();
+  }
+
   function addFromSearchResult(r){
+    const existing = srInArchive(r);
+    if(existing){ openDetail(existing.id); return; }          // Enter on a title you already have opens it
     const title = r.title || r.name || 'Untitled';
     const dateStr = r.release_date || r.first_air_date || '';
     const year = dateStr ? parseInt(dateStr.slice(0,4), 10) : new Date().getFullYear();
@@ -3414,7 +3462,7 @@ const itemsDocRef = doc(db, "tracker", "items");
   }
 
   document.addEventListener('click', (e) => {
-    if(!e.target.closest('.ticket-window') && !e.target.closest('.search-results')){
+    if(!e.target.closest('.ticket-window') && !e.target.closest('.search-results') && !e.target.closest('.sh-overlay') && !e.target.closest('#detailModal')){
       searchResults.classList.remove('open');
     }
   });
@@ -5633,6 +5681,7 @@ const itemsDocRef = doc(db, "tracker", "items");
     return state.items.find(i => i.type === type && ((i.tmdbId && i.tmdbId === r.id) || (i.title.toLowerCase() === title && i.year === year)));
   }
   function exMarkInLibrary(){
+    srRefreshRows();
     document.querySelectorAll('#exploreDiscover .ex-card, #exploreDiscover .ex-slide').forEach(el => {
       if(el.classList.contains('sk')) return;
       const r = exMap[exType + ':' + el.dataset.id];
